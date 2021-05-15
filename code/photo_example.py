@@ -5,6 +5,7 @@ import cv2
 import os
 from sys import platform
 import argparse
+import json
 
 try:
     # Import Openpose (Windows/Ubuntu/OSX)
@@ -61,10 +62,40 @@ try:
     datum.cvInputData = imageToProcess
     opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 
-    # Display Image
-    print("Body keypoints: \n" + str(datum.poseKeypoints))
-    cv2.imshow("OpenPose 1.7.0 - Tutorial Python API", datum.cvOutputData)
-    cv2.waitKey(0)
+    # # Display Image
+    # print("Body keypoints: \n" + str(datum.poseKeypoints))
+    # cv2.imshow("OpenPose 1.7.0 - Tutorial Python API", datum.cvOutputData)
+    # cv2.waitKey(0)
+
+    # save the keypoint as a list
+    body_point = ["Nose", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
+                  "MidHip", "RHip", "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle",
+                  "REye", "LEye", "REar", "LEar",
+                  "LBigToe", "LSmallToe", "LHeel", "RBigToe", "RSmallToe", "RHeel", "Background"]
+
+    keypoints = []
+    for person_id in range(datum.poseKeypoints.shape[0]):
+        location = []
+        for keypoint in range(25):
+            location.append({
+                body_point[keypoint]: {
+                    "x": float(datum.poseKeypoints[person_id][keypoint][0]),
+                    "y": float(datum.poseKeypoints[person_id][keypoint][1]),
+                    "accuracy": float(datum.poseKeypoints[person_id][keypoint][2])
+                }
+            })
+
+        keypoints.append({
+            'person': {
+                "person_id": person_id,
+                "keypoint": location
+            }
+        })
+
+    # show list as json
+    keypoints = json.dumps(keypoints, indent=4)
+    print(keypoints)
+
 except Exception as e:
     print(e)
     sys.exit(-1)

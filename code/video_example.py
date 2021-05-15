@@ -5,6 +5,7 @@ import cv2
 import os
 from sys import platform
 import argparse
+import json
 
 try:
     # Import Openpose (Windows/Ubuntu/OSX)
@@ -65,11 +66,21 @@ try:
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # Define the codec and create VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
-    out = cv2.VideoWriter('output.avi', fourcc, 20.0, (width, height))
+    # # Define the codec and create VideoWriter object
+    # fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+    # out = cv2.VideoWriter('output.avi', fourcc, 20.0, (width, height))
 
+    # save the keypoint as a list
+    body_point = ["Nose", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
+                  "MidHip", "RHip", "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle",
+                  "REye", "LEye", "REar", "LEar",
+                  "LBigToe", "LSmallToe", "LHeel", "RBigToe", "RSmallToe", "RHeel", "Background"]
+
+    frame_data = []
+    frame_id = -1
     while cap.isOpened():
+        frame_id += 1
+
         grabbed, frame = cap.read()
 
         if frame is None or not grabbed:
@@ -78,20 +89,46 @@ try:
 
         datum.cvInputData = frame
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-        print("Body keypoints: \n" + str(datum.poseKeypoints))
+        # print("Body keypoints: \n" + str(datum.poseKeypoints))
 
-        # write the flipped frame
-        out.write(datum.cvOutputData)
+        # # write the flipped frame
+        # out.write(datum.cvOutputData)
 
-        cv2.imshow("OpenPose 1.7.0 - Tutorial Python API", datum.cvOutputData)
-        cv2.waitKey(1)
+        # cv2.imshow("OpenPose 1.7.0 - Tutorial Python API", datum.cvOutputData)
+        # cv2.waitKey(1)
+
+        keypoints = [{
+            'frame_id': frame_id
+        }]
+        for person_id in range(datum.poseKeypoints.shape[0]):
+            location = []
+            for keypoint in range(25):
+                location.append({
+                    body_point[keypoint]: {
+                        "x": float(datum.poseKeypoints[person_id][keypoint][0]),
+                        "y": float(datum.poseKeypoints[person_id][keypoint][1]),
+                        "accuracy": float(datum.poseKeypoints[person_id][keypoint][2])
+                    }
+                })
+
+            keypoints.append({
+                'person': {
+                    "person_id": person_id,
+                    "keypoint": location
+                }
+            })
+        frame_data.append(keypoints)
 
     else:
         print('cannot open the file')
 
+    # show list as json
+    frame_data = json.dumps(frame_data, indent=4)
+    print(frame_data)
+
     cap.release()
-    out.release()
-    cv2.destroyAllWindows()
+    # out.release()
+    # cv2.destroyAllWindows()
 except Exception as e:
     print(e)
     sys.exit(-1)
