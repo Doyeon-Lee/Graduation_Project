@@ -68,9 +68,8 @@ try:
 
     # # Define the codec and create VideoWriter object
     # fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
-    # out = cv2.VideoWriter('output.avi', fourcc, 20.0, (width, height))
+    # out = cv2.VideoWriter('../output/output.avi', fourcc, 20.0, (width, height))
 
-    # save the keypoint as a list
     body_point = ["Nose", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
                   "MidHip", "RHip", "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle",
                   "REye", "LEye", "REar", "LEar",
@@ -97,34 +96,32 @@ try:
         # cv2.imshow("OpenPose 1.7.0 - Tutorial Python API", datum.cvOutputData)
         # cv2.waitKey(1)
 
-        keypoints = [{
-            'frame_id': frame_id
-        }]
+        # save the keypoint as a list
+        keypoints_tmp = []
+        keypoints = {'frame_id': frame_id}
         for person_id in range(datum.poseKeypoints.shape[0]):
-            location = []
+            location = {}
             for keypoint in range(25):
-                location.append({
-                    body_point[keypoint]: {
-                        "x": float(datum.poseKeypoints[person_id][keypoint][0]),
-                        "y": float(datum.poseKeypoints[person_id][keypoint][1]),
-                        "accuracy": float(datum.poseKeypoints[person_id][keypoint][2])
-                    }
-                })
+                body = {
+                    "x": float(datum.poseKeypoints[person_id][keypoint][0]),
+                    "y": float(datum.poseKeypoints[person_id][keypoint][1]),
+                    "accuracy": float(datum.poseKeypoints[person_id][keypoint][2])
+                }
+                location.update({body_point[keypoint]: body})
 
-            keypoints.append({
-                'person': {
+            keypoints_tmp.append({
                     "person_id": person_id,
                     "keypoint": location
-                }
             })
+        keypoints["person"] = keypoints_tmp
         frame_data.append(keypoints)
 
     else:
         print('cannot open the file')
 
     # show list as json
-    frame_data = json.dumps(frame_data, indent=4)
-    print(frame_data)
+    with open('../output/output.json', 'w', encoding="utf-8") as make_file:
+        json.dump(frame_data, make_file, ensure_ascii=False, indent="\t")
 
     cap.release()
     # out.release()
