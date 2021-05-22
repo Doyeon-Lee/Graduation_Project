@@ -169,7 +169,7 @@ try:
     picture_json = make_json(datum, 0, draw_img)
 
 
-    with open('../output/picture_json.json', 'w', encoding="utf-8") as make_file:
+    with open('../output/picture.json', 'w', encoding="utf-8") as make_file:
         json.dump(picture_json, make_file, ensure_ascii=False, indent="\t")
 
 

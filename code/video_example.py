@@ -42,7 +42,7 @@ def obj_tracking(_x, _y, _w, _h):
     # win_name = 'Tracking APIs'
 
     fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
-    out = cv2.VideoWriter('../output/output.avi', fourcc, 20.0, (FRAME_W, FRAME_H))
+    out = cv2.VideoWriter('../output/bbox_output.avi', fourcc, 20.0, (FRAME_W, FRAME_H))
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -247,7 +247,7 @@ def detect_skeleton():
 
         # # Define the codec and create VideoWriter object
         # fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
-        # out = cv2.VideoWriter('../output/output.avi', fourcc, 20.0, (FRAME_W, FRAME_H))
+        # out = cv2.VideoWriter('../output/bbox_output.avi', fourcc, 20.0, (FRAME_W, FRAME_H))
 
         frame_data = []
         frame_id = -1
