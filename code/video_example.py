@@ -3,6 +3,7 @@ import cv2
 import os
 from sys import platform
 import argparse
+import numpy as np
 
 body_point = ["Nose", "Neck", "RShoulder", "RElbow", "RWrist",
               "LShoulder", "LElbow", "LWrist", "MidHip", "RHip",
@@ -32,7 +33,7 @@ def obj_tracking(_x, _y, _w, _h):
     isFirst = True
 
     # 비디오 파일 선택 ---②
-    video_src = "../media/17.mp4"
+    video_src = "../output/output.avi"
     cap = cv2.VideoCapture(video_src)
 
     FRAME_W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -42,7 +43,7 @@ def obj_tracking(_x, _y, _w, _h):
     # win_name = 'Tracking APIs'
 
     fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
-    out = cv2.VideoWriter('../output/bbox_output.avi', fourcc, 20.0, (FRAME_W, FRAME_H))
+    out = cv2.VideoWriter('../output/bbox_output2.avi', fourcc, 20.0, (FRAME_W, FRAME_H))
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -95,6 +96,7 @@ def obj_tracking(_x, _y, _w, _h):
     cv2.destroyAllWindows()
 
 
+# bbox 찾기1
 def check_boundary(person_bodypoint, frame_w, frame_h):
     n = body_dict['Neck']
     ls = body_dict['LShoulder']
@@ -139,6 +141,20 @@ def check_boundary(person_bodypoint, frame_w, frame_h):
     return _x, _y, _w, _h
 
 
+# bbox 찾기1
+def find_bbox(person_bodypoint):
+    person_bodypoint = np.array(person_bodypoint)
+
+    # 0을 제외하고 행의 최소값 구하기
+    x_min, y_min, _ = np.apply_along_axis(lambda a: np.min(a[a != 0]), 0, person_bodypoint)
+    x_max, y_max, _ = np.apply_along_axis(lambda a: np.max(a[a != 0]), 0, person_bodypoint)
+
+    w = int(x_max - x_min)
+    h = int(y_max - y_min)
+
+    return int(x_min), int(y_min), int(w), int(h)
+
+
 def get_location(frame_data):
     person_id = 0
     person_bodypoint = frame_data[0]['person'][person_id]['keypoint']
@@ -154,7 +170,7 @@ def get_location(frame_data):
             tmp2.append(v)
         dict_to_list.append(tmp2)
 
-    _x, _y, _w, _h = check_boundary(dict_to_list, FRAME_W, FRAME_H)
+    _x, _y, _w, _h = find_bbox(dict_to_list) # check_boundary(dict_to_list, FRAME_W, FRAME_H)
     print(_x, _y, _w, _h)
     obj_tracking(_x, _y, _w, _h)
 

@@ -75,13 +75,13 @@ with open('../output/output.json') as f:
             tmp2.append(v)
         dict_to_list.append(tmp2)
 
-    VIDEO_PATH = '../media/17.mp4'
+    VIDEO_PATH = '../output/output.avi'
     cap = cv2.VideoCapture(VIDEO_PATH)
     if cap.isOpened():
         ret, frame = cap.read()
         FRAME_W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         FRAME_H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        x, y, w, h = check_boundary(dict_to_list, FRAME_W, FRAME_H)
+        x, y, w, h = find_bbox(dict_to_list)  # check_boundary(dict_to_list, FRAME_W, FRAME_H)
         print(x, y, w, h)
         obj_tracking(x, y, w, h)
 
