@@ -75,7 +75,7 @@ with open('../output/output.json') as f:
             tmp2.append(v)
         dict_to_list.append(tmp2)
 
-    VIDEO_PATH = '../output/output.avi'
+    VIDEO_PATH = '../output/openpose_output.avi'
     cap = cv2.VideoCapture(VIDEO_PATH)
     if cap.isOpened():
         ret, frame = cap.read()

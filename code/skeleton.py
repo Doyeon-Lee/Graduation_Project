@@ -26,7 +26,7 @@ def detect_skeleton():
 
         # Flags
         parser = argparse.ArgumentParser()
-        parser.add_argument("--video_path", default="../media/17.mp4", help="Read input video (avi, mp4).")
+        parser.add_argument("--video_path", default="../output/tracking_output.avi", help="Read input video (avi, mp4).")
         parser.add_argument("--no_display", default=False, help="Enable to disable the visual display.")
         args = parser.parse_known_args()
 
@@ -65,9 +65,9 @@ def detect_skeleton():
         set_frame_size(int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
 
-        # # Define the codec and create VideoWriter object
-        # fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
-        # out = cv2.VideoWriter('../output/bbox_output.avi', fourcc, 20.0, get_frame_size())
+        # Define the codec and create VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+        out = cv2.VideoWriter('../output/final_output.avi', fourcc, 20.0, get_frame_size())
 
         frame_data = []
         frame_id = -1
@@ -85,8 +85,8 @@ def detect_skeleton():
             opWrapper.emplaceAndPop(op.VectorDatum([datum]))
             # print("Body keypoints: \n" + str(datum.poseKeypoints))
 
-            # # write the flipped frame
-            # out.write(datum.cvOutputData)
+            # write the flipped frame
+            out.write(datum.cvOutputData)
 
             # cv2.imshow("OpenPose 1.7.0 - Tutorial Python API", datum.cvOutputData)
             # cv2.waitKey(1)
@@ -109,3 +109,5 @@ def detect_skeleton():
         sys.exit(-1)
 
     return frame_data
+
+detect_skeleton()

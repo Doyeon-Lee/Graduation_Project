@@ -14,7 +14,7 @@ def obj_tracking(_x, _y, _w, _h):
     isFirst = True
 
     # 비디오 파일 선택 ---②
-    video_src = "../output/output.avi"
+    video_src = "../output/openpose_output.avi"
     cap = cv2.VideoCapture(video_src)
 
     set_frame_size(int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
