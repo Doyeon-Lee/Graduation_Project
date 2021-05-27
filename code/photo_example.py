@@ -48,61 +48,6 @@ def make_json(datum, frame_id, img):
     return keypoints
 
 
-def yolo(frame):
-    # YOLO 가중치 파일과 CFG 파일 로드
-    YOLO_net = cv2.dnn.readNet("../yolo/yolov2-tiny.weights", "../yolo/yolov2-tiny.cfg")
-    # YOLO NETWORK 재구성
-    classes = []
-    with open("../yolo/yolo.names", "r") as f:
-        classes = [line.strip() for line in f.readlines()]
-    layer_names = YOLO_net.getLayerNames()
-    output_layers = [layer_names[i[0] - 1] for i in YOLO_net.getUnconnectedOutLayers()]
-
-    h, w, c = frame.shape
-
-    # YOLO 입력
-    blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
-    YOLO_net.setInput(blob)
-    outs = YOLO_net.forward(output_layers)
-
-    class_ids = []
-    confidences = []
-    boxes = []
-
-    for out in outs:
-        for detection in out:
-            scores = detection[5:]
-            class_id = np.argmax(scores)
-            confidence = scores[class_id]
-
-            # 검출 신뢰도
-            if confidence > 0.5:
-                # Object detected
-                # 검출기의 경계상자 좌표는 0 ~ 1로 정규화되어있으므로 다시 전처리
-                center_x = int(detection[0] * w)
-                center_y = int(detection[1] * h)
-                dw = int(detection[2] * w)
-                dh = int(detection[3] * h)
-                # Rectangle coordinate
-                x = int(center_x - dw / 2)
-                y = int(center_y - dh / 2)
-                boxes.append([x, y, dw, dh])
-                confidences.append(float(confidence))
-                class_ids.append(class_id)
-
-    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.45, 0.4)
-
-    for i in range(len(boxes)):
-        if i in indexes:
-            x, y, w, h = boxes[i]
-            label = str(classes[class_ids[i]])
-            score = confidences[i]
-
-            # 경계상자와 클래스 정보 투영
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 5)
-            cv2.putText(frame, (x, y), (x + w, y + h), (0, 0, 255), 5)
-    return frame
-
 
 try:
     # Import Openpose (Windows/Ubuntu/OSX)
@@ -116,7 +61,8 @@ try:
         else:
             # Change these variables to point to the correct folder (Release/x64 etc.)
             sys.path.append('../../openpose/build/python');
-            # If you run `make install` (default path is `/usr/local/python` for Ubuntu), you can also access the OpenPose/python module from there. This will install OpenPose and the python library at your desired installation path. Ensure that this is in your python path in order to use it.
+            # If you run `make install` (default path is `/usr/local/python` for Ubuntu), you can also access the OpenPose/python module from there.
+            # This will install OpenPose and the python library at your desired installation path. Ensure that this is in your python path in order to use it.
             # sys.path.append('/usr/local/python')
             from openpose import pyopenpose as op
     except ImportError as e:
@@ -167,7 +113,6 @@ try:
     # save the keypoint as a list
     draw_img = cv2.imread("../media/people.png", cv2.IMREAD_COLOR)
     picture_json = make_json(datum, 0, draw_img)
-
 
     with open('../output/picture.json', 'w', encoding="utf-8") as make_file:
         json.dump(picture_json, make_file, ensure_ascii=False, indent="\t")

@@ -1,18 +1,5 @@
-import cv2
-from video_example import *
-import json
-
-
-body_point = ["Nose", "Neck", "RShoulder", "RElbow", "RWrist",
-              "LShoulder", "LElbow", "LWrist", "MidHip", "RHip",
-              "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle",
-              "REye", "LEye", "REar", "LEar", "LBigToe",
-              "LSmallToe", "LHeel", "RBigToe", "RSmallToe", "RHeel"]
-# body_point = ['Neck', 'LShoulder', 'RShoulder', 'MidHip', 'LHip', 'RHip']
-body_dict = {}
-for i, v in enumerate(body_point):
-    body_dict[v] = i
-
+from skeleton import *
+from video_tracking import *
 
 # def check_boundary(person_bodypoint, frame_w, frame_h):
 #     n = body_dict['Neck']
@@ -56,16 +43,18 @@ for i, v in enumerate(body_point):
 #
 #     _w = int(_w)
 #     return _x, _y, _w, _h
-#
-#
-# # load json
+
+
+
+# json파일 첫 frame에서 bbox 찾고 동영상에 tracking 적용하기
 with open('../output/output.json') as f:
     json_data = json.load(f)
 
-    obj = json_data[0]['person'][0]['keypoint'] # 0번째 frame 0번째 person
+    obj = json_data[0]['person'][0]['keypoint']  # 0번째 frame 0번째 person
 
     tmp = []
     for key in body_point:
+        if key == 'Background': break
         tmp.append(obj[key])
 
     dict_to_list = []
@@ -79,12 +68,44 @@ with open('../output/output.json') as f:
     cap = cv2.VideoCapture(VIDEO_PATH)
     if cap.isOpened():
         ret, frame = cap.read()
-        FRAME_W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        FRAME_H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        x, y, w, h = find_bbox(dict_to_list)  # check_boundary(dict_to_list, FRAME_W, FRAME_H)
+        set_frame_size(int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+        x, y, w, h = find_bbox2(dict_to_list)  # check_boundary(dict_to_list, FRAME_W, FRAME_H)
         print(x, y, w, h)
         obj_tracking(x, y, w, h)
 
 
 #frame_data = detect_skeleton()
 #get_location(frame_data)
+
+
+# def angle_between(p1, p2, p3):
+#     x1, y1 = p1
+#     x2, y2 = p2
+#     x3, y3 = p3
+#     deg1 = (360 + degrees(atan2(x1 - x2, y1 - y2))) % 360
+#     deg2 = (360 + degrees(atan2(x3 - x2, y3 - y2))) % 360
+#     return abs(deg2 - deg1)
+#
+#
+# # plotting
+# with open('../output/output.json') as f:
+#     json_data = json.load(f)
+#     json_len = len(json_data)
+#
+#     right_arm_angle = []
+#     for i in range(json_len):
+#         obj = json_data[i]['person'][0]['keypoint']  # 0번째 frame 0번째 person
+#         rs = obj['RShoulder']
+#         re = obj['RElbow']
+#         rw = obj['RWrist']
+#
+#         angle = angle_between((rs['x'], rs['y']), (re['x'], re['y']), (rw['x'], rw['y']))
+#         right_arm_angle.append(angle)
+#
+#     xspan = np.array([i for i in range(json_len)])
+#     plt.plot(xspan, right_arm_angle)
+#     plt.xlabel('frame')
+#     plt.ylabel('right arm angle')
+#     plt.show()
+
+
