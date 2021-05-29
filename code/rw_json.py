@@ -2,6 +2,8 @@ from global_data import *
 
 
 def make_json(datum, frame_id):
+    if datum.poseKeypoints is None:
+        return
     keypoints_tmp = []
     keypoints = {'frame_id': frame_id}
     for person_id in range(datum.poseKeypoints.shape[0]):
