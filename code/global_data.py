@@ -13,11 +13,22 @@ body_point = ["Nose", "Neck", "RShoulder", "RElbow", "RWrist",
               "LShoulder", "LElbow", "LWrist", "MidHip", "RHip",
               "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle",
               "REye", "LEye", "REar", "LEar", "LBigToe",
-              "LSmallToe", "LHeel", "RBigToe", "RSmallToe", "RHeel", "Background"]
+              "LSmallToe", "LHeel", "RBigToe", "RSmallToe", "RHeel",
+              "Background"]
+
 
 body_dict = {}
 for i, v in enumerate(body_point):
     body_dict[v] = i
+
+specific_point = [
+    ['LShoulder', 'LElbow', 'LWrist'],
+    ['RShoulder', 'RElbow', 'RWrist'],
+    ['LHip', 'LKnee', 'LAnkle'],
+    ['RHip', 'RKnee', 'RAnkle']
+]
+
+
 
 # default frame size
 FRAME_W = 0
