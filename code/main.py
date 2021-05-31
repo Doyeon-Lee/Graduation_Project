@@ -234,7 +234,7 @@ if __name__ == "__main__":
         tmp_angle, tmp_incl = get_variance(name, 1)
         angle_list.extend(tmp_angle)
         incl_list.extend(tmp_incl)
-    plt.scatter(incl_list, angle_list)
+    plt.scatter(incl_list, angle_list, label="violence")
 
     # 다른 색으로 적용하기 위해 리스트 다시 초기화
     angle_list = []
@@ -247,10 +247,11 @@ if __name__ == "__main__":
         tmp_angle, tmp_incl = get_variance(name, 1)
         angle_list.extend(tmp_angle)
         incl_list.extend(tmp_incl)
-    plt.scatter(incl_list, angle_list, c='red')
+    plt.scatter(incl_list, angle_list, c='red', label="non-violence")
 
     plt.xlabel('inclination variance')
     plt.ylabel('angle variance')
+    plt.legend()
     plt.show()
 
     # 일정 이상의 수치가 나오는 놈들 출력
