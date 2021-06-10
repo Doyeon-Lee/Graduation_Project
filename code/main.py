@@ -80,6 +80,7 @@ import math
 
 print()  # 위쪽 주석이 아래 주석이랑 합쳐져서 임시로 넣어둠
 
+
 # 세 점 사이의 각도 구하기
 def angle_three_points(p1, p2, p3):
     x1, y1 = p1
@@ -90,7 +91,9 @@ def angle_three_points(p1, p2, p3):
 
     deg1 = abs((deg1 * 180) / math.pi)  # 각도로 변환
     deg2 = abs((deg2 * 180) / math.pi)  # 각도로 변환
-    return min(abs(deg1 - deg2), abs(180 - deg1 - deg2))
+    res_deg = deg1 - deg2
+    return res_deg if res_deg > 180 else res_deg-180
+    #return min(abs(deg1 - deg2), abs(180 - deg1 - deg2))
 
 
 # 벡터로 변환
