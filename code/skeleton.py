@@ -98,7 +98,7 @@ def detect_skeleton(file_name):
             print('cannot open the file')
 
         # show list as json
-        with open(f'../output/json/vio_cam2/{file_name}.json', 'w', encoding="utf-8") as make_file:
+        with open(f'../output/json/violence/cam1/violence_cam1_{file_name}.json', 'w', encoding="utf-8") as make_file:
             json.dump(frame_data, make_file, ensure_ascii=False, indent="\t")
 
         cap.release()
@@ -111,7 +111,9 @@ def detect_skeleton(file_name):
     return frame_data
 
 
-for i in range(31, 116):
+
+for i in range(37, 116):
     detect_skeleton(str(i))
 
-#detect_skeleton("1")
+#detect_skeleton("49")
+
