@@ -152,6 +152,9 @@ def get_avg(val_list):
         tmp.extend(val_list[num_avg * iter:])
     return tmp
 
+# 0인 값 ok
+# 너무 큰 값이 나왔을때(정확도가 낮은 경우) 0.5 ok?
+# 사람별 변화값 분리 필요
 
 # person id는 plotting 결과를 얻고자 함수를 반복하기 위해 임의로 넣은 것
 def get_variance(json_filename, person_id):
