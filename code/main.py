@@ -1,5 +1,6 @@
 # from skeleton import *  # import하면 wrapper 가 실행된다
 from video_tracking import *
+from rw_json import *
 import math
 
 
@@ -93,7 +94,6 @@ def angle_three_points(p1, p2, p3):
     deg2 = abs((deg2 * 180) / math.pi)  # 각도로 변환
     res_deg = deg1 - deg2
     return res_deg if res_deg > 180 else res_deg-180
-    #return min(abs(deg1 - deg2), abs(180 - deg1 - deg2))
 
 
 # 벡터로 변환
@@ -136,6 +136,8 @@ def person_distance(specific_bt, person_bt):
     if num_cnt is 0: return 0
     return dist / num_cnt
 
+# 한 동영상에서-사람별-관절별-각도, 기울기 변화
+
 
 # 특정 프레임수 단위로 끊어 그 값들을 평균을 낸다
 def get_avg(val_list):
@@ -152,13 +154,16 @@ def get_avg(val_list):
         tmp.extend(val_list[num_avg * iter:])
     return tmp
 
+
+
 # 0인 값 ok
 # 너무 큰 값이 나왔을때(정확도가 낮은 경우) 0.5 ok?
 # 사람별 변화값 분리 필요
 
+
 # person id는 plotting 결과를 얻고자 함수를 반복하기 위해 임의로 넣은 것
-def get_variance(json_filename, person_id):
-    with open(f'../output/json/{json_filename}.json') as f:
+def get_variance(json_filename, person_id, point_number):
+    with open(json_filename) as f:
         json_data = json.load(f)
         json_len = len(json_data)
         angle_list = []
@@ -189,35 +194,34 @@ def get_variance(json_filename, person_id):
             specific_bt = get_point_list(specific)
 
             # 추적하고자 하는 객체의 관절 변화를 계산
-            for j in range(4):
-                p1, p2, p3 = specific_point[j]
+            p1, p2, p3 = specific_point[point_number]
 
-                # 추적하는 객체의 관절값 가져오기
-                p1 = specific[p1]; p2 = specific[p2]; p3 = specific[p3]
-                acc1 = float(p1['accuracy']); acc2 = float(p2['accuracy']); acc3 = float(p3['accuracy'])
-                p1 = (p1['x'], p1['y']); p2 = (p2['x'], p2['y']); p3 = (p3['x'], p3['y'])
+            # 추적하는 객체의 관절값 가져오기
+            p1 = specific[p1]; p2 = specific[p2]; p3 = specific[p3]
+            acc1 = float(p1['accuracy']); acc2 = float(p2['accuracy']); acc3 = float(p3['accuracy'])
+            p1 = (p1['x'], p1['y']); p2 = (p2['x'], p2['y']); p3 = (p3['x'], p3['y'])
 
-                # 0이 있으면 해당 frame 건너 뛴다
-                if 0 in p1 or 0 in p2 or 0 in p3 or \
-                        acc1 < 0.5 or acc2 < 0.5 or acc3 < 0.5:
-                    num_pass[j] += 1
-                    continue
+            # 0이 있으면 해당 frame 건너 뛴다
+            if 0 in p1 or 0 in p2 or 0 in p3 or \
+                    acc1 < 0.5 or acc2 < 0.5 or acc3 < 0.5:
+                num_pass[point_number] += 1
+                continue
 
-                # 세 점 사이의 각도를 구하여 직전 각도의 차이를 기록한다
-                cur_angle = angle_three_points(p1, p2, p3)
-                sub_angle = abs(pre_list[j][0] - cur_angle) / num_pass[j]
-                if i > 1: angle_list.append(sub_angle)
-                pre_list[j][0] = cur_angle
+            # 세 점 사이의 각도를 구하여 직전 각도의 차이를 기록한다
+            cur_angle = angle_three_points(p1, p2, p3)
+            sub_angle = abs(pre_list[point_number][0] - cur_angle) / num_pass[point_number]
+            if i > 1: angle_list.append(sub_angle)
+            pre_list[point_number][0] = cur_angle
 
-                # 두 점을 잇는 벡터와 직전 벡터와의 각도를 구한 후, 기록한다
-                cur_vec = make_vector(p1, p3)
-                pre_vec = pre_list[j][1]
-                sub_incl_angle = get_incl_angle(cur_vec, pre_vec) / num_pass[j]
-                if i > 1: incl_list.append(sub_incl_angle)
-                pre_list[j][1] = cur_vec
+            # 두 점을 잇는 벡터와 직전 벡터와의 각도를 구한 후, 기록한다
+            cur_vec = make_vector(p1, p3)
+            pre_vec = pre_list[point_number][1]
+            sub_incl_angle = get_incl_angle(cur_vec, pre_vec) / num_pass[point_number]
+            if i > 1: incl_list.append(sub_incl_angle)
+            pre_list[point_number][1] = cur_vec
 
-                # 여기까지 왔으면 frame 안넘어갔겠다
-                num_pass[j] = 1
+            # 여기까지 왔으면 frame 안넘어갔겠다
+            num_pass[point_number] = 1
 
     # n개의 frame을 단위로 그 값을 평균을 낸다 => 1초가 몇 frame인지 고려하면 좋을 듯
     avg_angle = get_avg(angle_list)
@@ -226,6 +230,10 @@ def get_variance(json_filename, person_id):
 
 
 if __name__ == "__main__":
+    # 값 변화 json으로 저장하기
+    calc_variance()
+
+    # 값 변화 plotting 하기
     non_violence_json_file = ['output47', 'output49']
     violence_json_file = ['output', 'output37']
 
@@ -261,7 +269,7 @@ if __name__ == "__main__":
     plt.show()
 
     # 일정 이상의 수치가 나오는 놈들 출력
-    # l = len(angle_list)
-    # for i in range(l):
-    #     if angle_list[i] > 50 or incl_list[i] > 100:
-    #         print(angle_list[i], incl_list[i])
+    l = len(angle_list)
+    for i in range(l):
+        if angle_list[i] > 50 or incl_list[i] > 100:
+            print(angle_list[i], incl_list[i])

@@ -28,6 +28,9 @@ specific_point = [
     ['RHip', 'RKnee', 'RAnkle']
 ]
 
+specific_joint = ['LArm', 'RArm', 'LLeg', 'RLeg']
+SKELETON_FILEPATH = "../output/json/skeleton_data/non-violent/cam1/output"
+PREPROCESSED_FILEPATH = "../output/json/preprocessed_data/non-violent/cam1/output"
 
 
 # default frame size
