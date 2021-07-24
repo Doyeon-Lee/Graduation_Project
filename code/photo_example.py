@@ -77,6 +77,7 @@ try:
     # Custom Params (refer to include/openpose/flags.hpp for more parameters)
     params = dict()
     params["model_folder"] = "../../openpose/models/"
+    params["model_pose"] = "MPI"
 
     # Add others in path?
     for i in range(0, len(args[1])):
