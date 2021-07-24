@@ -71,7 +71,7 @@ try:
 
     # Flags
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", default="../media/people.png", help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
+    parser.add_argument("--image_path", default="../media/family2.jpg", help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
     args = parser.parse_known_args()
 
     # Custom Params (refer to include/openpose/flags.hpp for more parameters)
@@ -105,17 +105,17 @@ try:
     datum.cvInputData = imageToProcess
     opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 
-    # # Display Image
-    # print("Body keypoints: \n" + str(datum.poseKeypoints))
-    # cv2.imshow("OpenPose 1.7.0 - Tutorial Python API", datum.cvOutputData)
-    # cv2.waitKey(0)
+    # Display Image
+    print("Body keypoints: \n" + str(datum.poseKeypoints))
+    cv2.imshow("OpenPose 1.7.0 - Tutorial Python API", datum.cvOutputData)
+    cv2.waitKey(0)
 
     # save the keypoint as a list
-    draw_img = cv2.imread("../media/people.png", cv2.IMREAD_COLOR)
-    picture_json = make_json(datum, 0, draw_img)
+    draw_img = cv2.imread("../media/family2.jpg", cv2.IMREAD_COLOR)
+    picture_json = [make_json(datum, 0, draw_img)]
 
-    with open('../output/picture.json', 'w', encoding="utf-8") as make_file:
-        json.dump(picture_json, make_file, ensure_ascii=False, indent="\t")
+    # with open('../output/json/picture/family3.json', 'w', encoding="utf-8") as make_file:
+    #     json.dump(picture_json, make_file, ensure_ascii=False, indent="\t")
 
 
 except Exception as e:
