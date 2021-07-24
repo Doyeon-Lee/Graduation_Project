@@ -10,7 +10,7 @@ def make_skeleton_json(datum, frame_id):
     for person_id in range(datum.poseKeypoints.shape[0]):
 
         location = {}
-        for keypoint in range(25):
+        for keypoint in range(15):
             body = {
                 "x": float(datum.poseKeypoints[person_id][keypoint][0]),
                 "y": float(datum.poseKeypoints[person_id][keypoint][1]),

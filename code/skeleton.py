@@ -33,6 +33,7 @@ def detect_skeleton(file_name):
         # Custom Params (refer to include/openpose/flags.hpp for more parameters)
         params = dict()
         params["model_folder"] = "../../openpose/models/"
+        params["model_pose"] = "MPI"
         params["disable_multi_thread"] = "false"
         numberGPUs = 1
 

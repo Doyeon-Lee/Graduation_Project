@@ -9,12 +9,8 @@ from math import atan2, degrees
 import matplotlib.pyplot as plt
 
 
-body_point = ["Nose", "Neck", "RShoulder", "RElbow", "RWrist",
-              "LShoulder", "LElbow", "LWrist", "MidHip", "RHip",
-              "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle",
-              "REye", "LEye", "REar", "LEar", "LBigToe",
-              "LSmallToe", "LHeel", "RBigToe", "RSmallToe", "RHeel",
-              "Background"]
+body_point = ["Head", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
+              "RHip", "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle", "Chest", "Background"]
 
 
 body_dict = {}

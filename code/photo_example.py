@@ -9,10 +9,8 @@ import json
 import numpy as np
 
 # 사용자가 보는 것과 반대 방향(오른쪽 > left)
-body_point = ["Nose", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
-              "MidHip", "RHip", "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle",
-              "REye", "LEye", "REar", "LEar",
-              "LBigToe", "LSmallToe", "LHeel", "RBigToe", "RSmallToe", "RHeel", "Background"]
+body_point = ["Head", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
+              "RHip", "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle", "Chest", "Background"]
 
 
 def make_json(datum, frame_id, img):
@@ -29,7 +27,7 @@ def make_json(datum, frame_id, img):
                           cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 4)
 
         location = {}
-        for keypoint in range(25):
+        for keypoint in range(15):
             body = {
                 "x": float(datum.poseKeypoints[person_id][keypoint][0]),
                 "y": float(datum.poseKeypoints[person_id][keypoint][1]),
@@ -71,7 +69,7 @@ try:
 
     # Flags
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", default="../media/family2.jpg", help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
+    parser.add_argument("--image_path", default="../media/family3.png", help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
     args = parser.parse_known_args()
 
     # Custom Params (refer to include/openpose/flags.hpp for more parameters)
@@ -112,10 +110,10 @@ try:
     cv2.waitKey(0)
 
     # save the keypoint as a list
-    draw_img = cv2.imread("../media/family2.jpg", cv2.IMREAD_COLOR)
+    draw_img = cv2.imread("../media/family3.png", cv2.IMREAD_COLOR)
     picture_json = [make_json(datum, 0, draw_img)]
 
-    # with open('../output/json/picture/family3.json', 'w', encoding="utf-8") as make_file:
+    # with open('../output/json/picture/family1.json', 'w', encoding="utf-8") as make_file:
     #     json.dump(picture_json, make_file, ensure_ascii=False, indent="\t")
 
 
