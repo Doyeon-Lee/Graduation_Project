@@ -155,7 +155,6 @@ def get_avg(val_list):
     return tmp
 
 
-
 # 0인 값 ok
 # 너무 큰 값이 나왔을때(정확도가 낮은 경우) 0.5 ok?
 # 사람별 변화값 분리 필요

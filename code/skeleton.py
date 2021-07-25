@@ -26,7 +26,7 @@ def detect_skeleton(file_name):
 
         # Flags
         parser = argparse.ArgumentParser()
-        parser.add_argument("--video_path", default=f"../media/vio_cam2/{file_name}.mp4", help="Read input video (avi, mp4).")
+        parser.add_argument("--video_path", default=f"../media/{file_name}.mp4", help="Read input video (avi, mp4).")
         parser.add_argument("--no_display", default=False, help="Enable to disable the visual display.")
         args = parser.parse_known_args()
 
@@ -99,7 +99,7 @@ def detect_skeleton(file_name):
             print('cannot open the file')
 
         # show list as json
-        with open(f'../output/json/skeleton_data/violence/cam1/output{file_name}.json', 'w', encoding="utf-8") as make_file:
+        with open(f'../output/json/skeleton_data/violent/cam1/output{file_name}.json', 'w', encoding="utf-8") as make_file:
             json.dump(frame_data, make_file, ensure_ascii=False, indent="\t")
 
         cap.release()
@@ -113,8 +113,8 @@ def detect_skeleton(file_name):
 
 
 
-# for i in range(37, 116):
-#     detect_skeleton(str(i))
+for i in range(116):
+    detect_skeleton(str(i))
 
 #detect_skeleton("49")
 
