@@ -26,7 +26,7 @@ def detect_skeleton(file_name):
 
         # Flags
         parser = argparse.ArgumentParser()
-        parser.add_argument("--video_path", default=f"../media/vio_cam2/{file_name}.mp4", help="Read input video (avi, mp4).")
+        parser.add_argument("--video_path", default=f"../media/{file_name}.mp4", help="Read input video (avi, mp4).")
         parser.add_argument("--no_display", default=False, help="Enable to disable the visual display.")
         args = parser.parse_known_args()
 
@@ -113,7 +113,7 @@ def detect_skeleton(file_name):
 
 
 
-for i in range(1, 116):
+for i in range(115, 60, -1):
     detect_skeleton(str(i))
 
 #detect_skeleton("49")
