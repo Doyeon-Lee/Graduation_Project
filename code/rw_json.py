@@ -35,9 +35,10 @@ def make_preprocessed_json(json_filename, person_id):
 
     # 관심 있는 관절의 기울기와 각도를 추출
     for point_number in range(4):
-        tmp_angle, tmp_incl = get_variance(json_filename, person_id, point_number)
-        angle_list.extend(tmp_angle)
-        incl_list.extend(tmp_incl)
+        # tmp_angle, tmp_incl = get_variance(json_filename, person_id, point_number)
+        # angle_list.extend(tmp_angle)
+        # incl_list.extend(tmp_incl)
+        angle_list, incl_list = get_variance(json_filename, person_id, point_number)
 
         # 팔다리 하나씩의 변화량
         variance = {
@@ -71,3 +72,4 @@ def calc_variance():
 
             with open(PREPROCESSED_FILENAME, 'w', encoding="utf-8") as make_file:
                 json.dump(variance_data, make_file, ensure_ascii=False, indent="\t")
+

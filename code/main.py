@@ -115,7 +115,7 @@ def get_incl_angle(v1, v2):
 # 한 사람의 모든 관절의 (x, y) 쌍을 리스트로 반환
 def get_point_list(person):
     tmp = []
-    for i in range(25):
+    for i in range(15):
         bt = person[body_point[i]]
         tmp.append((float(bt['x']), float(bt['y'])))
     return np.asarray(tmp)
@@ -125,7 +125,7 @@ def get_point_list(person):
 def person_distance(specific_bt, person_bt):
     dist = 0
     num_cnt = 0
-    for i in range(25):
+    for i in range(15):
         if 0 in specific_bt[i] or 0 in person_bt[i]:
             continue
 
@@ -150,8 +150,10 @@ def get_avg(val_list):
         val = i*num_avg
         tmp.append(np.sum(val_list[val:val + num_avg]) / num_avg)
 
+    # num_avg개씩 계산하고 남은 나머지 덩어리
     if s % num_avg > 0:
         tmp.extend(val_list[num_avg * iter:])
+
     return tmp
 
 
@@ -168,12 +170,15 @@ def get_variance(json_filename, person_id, point_number):
         angle_list = []
         incl_list = []
 
-        num_pass = np.ones(4)  # 4개 팔다리에 대한 관절 측정 불가로 넘어간 프레임의 수
-        pre_list = [[0.0, [0, 0]] for _ in range(4)]  # 4개의 팔다리에 대한 직전 각도와 (수학적)벡터값 저장
+        num_pass = 1 # 해당 관절에서 넘어간 프레임의 수(3개 점중 하나라도 0이거나 신뢰도가 낮으면)
+        #pre_list = [[0.0, [0, 0]] for _ in range(4)]  # 4개의 팔다리에 대한 직전 각도와 (수학적)벡터값 저장
+        pre_list = [0.0, [0, 0]] # 해당 관절에 대한 직전 각도와 (수학적)벡터값 저장
         specific = json_data[0]['person'][person_id]['keypoint']  # 우리가 원하는 특정한 객체 specific!
         specific_bt = get_point_list(specific)
 
-        for i in range(1, json_len):
+
+        # 모든 프레임마다 반복하며
+        for i in range(0, json_len):
             # print(f"\nframe = {i}")
             obj = json_data[i]['person']
             obj_len = len(obj)
@@ -202,25 +207,33 @@ def get_variance(json_filename, person_id, point_number):
 
             # 0이 있으면 해당 frame 건너 뛴다
             if 0 in p1 or 0 in p2 or 0 in p3 or \
-                    acc1 < 0.5 or acc2 < 0.5 or acc3 < 0.5:
-                num_pass[point_number] += 1
+                    acc1 < 0.3 or acc2 < 0.3 or acc3 < 0.3:
+                num_pass += 1
                 continue
 
             # 세 점 사이의 각도를 구하여 직전 각도의 차이를 기록한다
             cur_angle = angle_three_points(p1, p2, p3)
-            sub_angle = abs(pre_list[point_number][0] - cur_angle) / num_pass[point_number]
-            if i > 1: angle_list.append(sub_angle)
-            pre_list[point_number][0] = cur_angle
+            sub_angle = abs(pre_list[0] - cur_angle) / num_pass
+            if i > 0: angle_list.append(sub_angle)
+            pre_list[0] = cur_angle
 
             # 두 점을 잇는 벡터와 직전 벡터와의 각도를 구한 후, 기록한다
             cur_vec = make_vector(p1, p3)
-            pre_vec = pre_list[point_number][1]
-            sub_incl_angle = get_incl_angle(cur_vec, pre_vec) / num_pass[point_number]
-            if i > 1: incl_list.append(sub_incl_angle)
-            pre_list[point_number][1] = cur_vec
+            pre_vec = pre_list[1]
+            sub_incl_angle = get_incl_angle(cur_vec, pre_vec) / num_pass
+
+
+            #if i > 0: incl_list.append(sub_incl_angle)
+            if i > 0:
+                if math.isnan(sub_incl_angle): incl_list.append(float(0))
+                else: incl_list.append(sub_incl_angle)
+
+
+            #pre_list[point_number][1] = cur_vec
+            pre_list[1] = cur_vec
 
             # 여기까지 왔으면 frame 안넘어갔겠다
-            num_pass[point_number] = 1
+            num_pass = 1
 
     # n개의 frame을 단위로 그 값을 평균을 낸다 => 1초가 몇 frame인지 고려하면 좋을 듯
     avg_angle = get_avg(angle_list)
@@ -233,42 +246,42 @@ if __name__ == "__main__":
     calc_variance()
 
     # 값 변화 plotting 하기
-    non_violence_json_file = ['output47', 'output49']
-    violence_json_file = ['output', 'output37']
-
-    # plotting에 쓸 리스트
-    angle_list = []
-    incl_list = []
-    # 폭력 데이터셋
-    for name in violence_json_file:
-        tmp_angle, tmp_incl = get_variance(name, 0)
-        angle_list.extend(tmp_angle)
-        incl_list.extend(tmp_incl)
-        tmp_angle, tmp_incl = get_variance(name, 1)
-        angle_list.extend(tmp_angle)
-        incl_list.extend(tmp_incl)
-    plt.scatter(incl_list, angle_list, label="violence")
-
-    # 다른 색으로 적용하기 위해 리스트 다시 초기화
-    angle_list = []
-    incl_list = []
-    # 비폭력 데이터셋
-    for name in non_violence_json_file:
-        tmp_angle, tmp_incl = get_variance(name, 0)
-        angle_list.extend(tmp_angle)
-        incl_list.extend(tmp_incl)
-        tmp_angle, tmp_incl = get_variance(name, 1)
-        angle_list.extend(tmp_angle)
-        incl_list.extend(tmp_incl)
-    plt.scatter(incl_list, angle_list, c='red', label="non-violence")
-
-    plt.xlabel('inclination variance')
-    plt.ylabel('angle variance')
-    plt.legend()
-    plt.show()
-
-    # 일정 이상의 수치가 나오는 놈들 출력
-    l = len(angle_list)
-    for i in range(l):
-        if angle_list[i] > 50 or incl_list[i] > 100:
-            print(angle_list[i], incl_list[i])
+    # non_violence_json_file = ['output47', 'output49']
+    # violence_json_file = ['output', 'output37']
+    #
+    # # plotting에 쓸 리스트
+    # angle_list = []
+    # incl_list = []
+    # # 폭력 데이터셋
+    # for name in violence_json_file:
+    #     tmp_angle, tmp_incl = get_variance(name, 0, 0)
+    #     angle_list.extend(tmp_angle)
+    #     incl_list.extend(tmp_incl)
+    #     tmp_angle, tmp_incl = get_variance(name, 1, 0)
+    #     angle_list.extend(tmp_angle)
+    #     incl_list.extend(tmp_incl)
+    # plt.scatter(incl_list, angle_list, label="violence")
+    #
+    # # 다른 색으로 적용하기 위해 리스트 다시 초기화
+    # angle_list = []
+    # incl_list = []
+    # # 비폭력 데이터셋
+    # for name in non_violence_json_file:
+    #     tmp_angle, tmp_incl = get_variance(name, 0, 0)
+    #     angle_list.extend(tmp_angle)
+    #     incl_list.extend(tmp_incl)
+    #     tmp_angle, tmp_incl = get_variance(name, 1, 0)
+    #     angle_list.extend(tmp_angle)
+    #     incl_list.extend(tmp_incl)
+    # plt.scatter(incl_list, angle_list, c='red', label="non-violence")
+    #
+    # plt.xlabel('inclination variance')
+    # plt.ylabel('angle variance')
+    # plt.legend()
+    # plt.show()
+    #
+    # # 일정 이상의 수치가 나오는 놈들 출력
+    # l = len(angle_list)
+    # for i in range(l):
+    #     if angle_list[i] > 50 or incl_list[i] > 100:
+    #         print(angle_list[i], incl_list[i])
