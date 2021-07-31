@@ -242,46 +242,43 @@ def get_variance(json_filename, person_id, point_number):
 
 
 if __name__ == "__main__":
-    # 값 변화 json으로 저장하기
-    calc_variance()
-
     # 값 변화 plotting 하기
-    # non_violence_json_file = ['output47', 'output49']
-    # violence_json_file = ['output', 'output37']
-    #
-    # # plotting에 쓸 리스트
-    # angle_list = []
-    # incl_list = []
-    # # 폭력 데이터셋
-    # for name in violence_json_file:
-    #     tmp_angle, tmp_incl = get_variance(name, 0, 0)
-    #     angle_list.extend(tmp_angle)
-    #     incl_list.extend(tmp_incl)
-    #     tmp_angle, tmp_incl = get_variance(name, 1, 0)
-    #     angle_list.extend(tmp_angle)
-    #     incl_list.extend(tmp_incl)
-    # plt.scatter(incl_list, angle_list, label="violence")
-    #
-    # # 다른 색으로 적용하기 위해 리스트 다시 초기화
-    # angle_list = []
-    # incl_list = []
-    # # 비폭력 데이터셋
-    # for name in non_violence_json_file:
-    #     tmp_angle, tmp_incl = get_variance(name, 0, 0)
-    #     angle_list.extend(tmp_angle)
-    #     incl_list.extend(tmp_incl)
-    #     tmp_angle, tmp_incl = get_variance(name, 1, 0)
-    #     angle_list.extend(tmp_angle)
-    #     incl_list.extend(tmp_incl)
-    # plt.scatter(incl_list, angle_list, c='red', label="non-violence")
-    #
-    # plt.xlabel('inclination variance')
-    # plt.ylabel('angle variance')
-    # plt.legend()
-    # plt.show()
-    #
-    # # 일정 이상의 수치가 나오는 놈들 출력
-    # l = len(angle_list)
-    # for i in range(l):
-    #     if angle_list[i] > 50 or incl_list[i] > 100:
-    #         print(angle_list[i], incl_list[i])
+    non_violence_json_file = ['20', '44']
+    violence_json_file = ['13', '36']
+
+    # plotting에 쓸 리스트
+    angle_list = []
+    incl_list = []
+    # 폭력 데이터셋
+    for name in violence_json_file:
+        with open(V_PREPROCESSED_FILEPATH + name + '.json') as f:
+            json_data = json.load(f)
+            element = json_data[0]['variance'][0] #LArm의 변화값
+            angle_list = element['LArm']['angle_variance']
+            incl_list = element['LArm']['incl_variance']
+            print(angle_list, incl_list)
+    plt.scatter(incl_list, angle_list, label="violence")
+
+    # 다른 색으로 적용하기 위해 리스트 다시 초기화
+    angle_list = []
+    incl_list = []
+    # 비폭력 데이터셋
+    for name in non_violence_json_file:
+        with open(NONV_PREPROCESSED_FILEPATH + name + '.json') as f:
+            json_data = json.load(f)
+            element = json_data[0]['variance'][0] #LArm의 변화값
+            angle_list = element['LArm']['angle_variance']
+            incl_list = element['LArm']['incl_variance']
+
+    plt.scatter(incl_list, angle_list, c='red', label="non-violence")
+
+    plt.xlabel('inclination variance')
+    plt.ylabel('angle variance')
+    plt.legend()
+    plt.show()
+
+    # 일정 이상의 수치가 나오는 놈들 출력
+    l = len(angle_list)
+    for i in range(l):
+        if angle_list[i] > 50 or incl_list[i] > 100:
+            print(angle_list[i], incl_list[i])

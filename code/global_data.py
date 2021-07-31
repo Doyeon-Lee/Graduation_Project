@@ -25,9 +25,10 @@ specific_point = [
 ]
 
 specific_joint = ['LArm', 'RArm', 'LLeg', 'RLeg']
-SKELETON_FILEPATH = "../output/json/skeleton_data/non-violent/cam1/output"
-PREPROCESSED_FILEPATH = "../output/json/preprocessed_data/non-violent/cam1/output"
-
+NONV_SKELETON_FILEPATH = "../output/json/skeleton_data/non-violent/cam1/output"
+V_SKELETON_FILEPATH = "../output/json/skeleton_data/violent/cam2/output"
+NONV_PREPROCESSED_FILEPATH = "../output/json/preprocessed_data/non-violent/cam1/output"
+V_PREPROCESSED_FILEPATH = "../output/json/preprocessed_data/violent/cam2/output"
 
 # default frame size
 FRAME_W = 0
