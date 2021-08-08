@@ -93,13 +93,32 @@ def detect_skeleton(file_name):
             # cv2.waitKey(1)
 
             # save the keypoint as a list
-            frame_data.append(make_skeleton_json(datum, frame_id))
+            one_frame_data = make_skeleton_json(datum, frame_id)
+
+            # 사람이 한 명도 잡히지 않는 frame 예외처리
+            if one_frame_data is None:
+                one_frame_data = {'frame_id': frame_id}
+                location = {}
+                for keypoint in range(15):
+                    body = {
+                        "x": float(0),
+                        "y": float(0),
+                        "accuracy": float(0)
+                    }
+                    location.update({body_point[keypoint]: body})
+
+                one_frame_data["person"] = [{
+                    "person_id": 0,
+                    "keypoint": location
+                }]
+
+            frame_data.append(one_frame_data)
 
         else:
             print('cannot open the file')
 
         # show list as json
-        with open(f'../output/json/skeleton_data/violent/cam2/output{file_name}.json', 'w', encoding="utf-8") as make_file:
+        with open(f'../output/json/output{file_name}.json', 'w', encoding="utf-8") as make_file:
             json.dump(frame_data, make_file, ensure_ascii=False, indent="\t")
 
         cap.release()
@@ -112,9 +131,5 @@ def detect_skeleton(file_name):
     return frame_data
 
 
-
-for i in range(115, 60, -1):
-    detect_skeleton(str(i))
-
-#detect_skeleton("49")
+detect_skeleton("54")
 
