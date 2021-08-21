@@ -4,7 +4,7 @@ import numpy as np
 
 def child_distinguish(file_name, frame_num):
     # json 파일 열기
-    with open(f'../output/json/{file_name}.json', 'r') as f:
+    with open(file_name, 'r') as f:
         json_data = json.load(f)
 
     body_ratio_list = np.array([])

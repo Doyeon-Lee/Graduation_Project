@@ -69,13 +69,14 @@ try:
 
     # Flags
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", default="../media/family3.png", help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
+    parser.add_argument("--image_path", default="../output/video/54/frame/00000.jpg", help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
     args = parser.parse_known_args()
 
     # Custom Params (refer to include/openpose/flags.hpp for more parameters)
     params = dict()
     params["model_folder"] = "../../openpose/models/"
     params["model_pose"] = "MPI"
+    params["net_resolution"] = "-1x160"
 
     # Add others in path?
     for i in range(0, len(args[1])):
@@ -110,7 +111,7 @@ try:
     cv2.waitKey(0)
 
     # save the keypoint as a list
-    draw_img = cv2.imread("../media/family3.png", cv2.IMREAD_COLOR)
+    draw_img = cv2.imread("../output/video/54/frame/00000.jpg", cv2.IMREAD_COLOR)
     picture_json = [make_json(datum, 0, draw_img)]
 
     # with open('../output/json/picture/family1.json', 'w', encoding="utf-8") as make_file:

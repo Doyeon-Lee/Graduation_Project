@@ -83,7 +83,7 @@ def get_avg(val_list):
 
 # skeleton json 에서 변화량 추출하기
 def calc_variance():
-    #폭력 데이터
+    # 폭력 데이터
     for i in range(1, 116):
         variance_data = []
         SKELETON_FILENAME = V_SKELETON_FILEPATH + str(i) + ".json"
@@ -159,11 +159,9 @@ def get_variance(json_filename, person_id, point_number):
         incl_list = []
 
         num_pass = 1 # 해당 관절에서 넘어간 프레임의 수(3개 점중 하나라도 0이거나 신뢰도가 낮으면)
-        #pre_list = [[0.0, [0, 0]] for _ in range(4)]  # 4개의 팔다리에 대한 직전 각도와 (수학적)벡터값 저장
         pre_list = [0.0, [0, 0]] # 해당 관절에 대한 직전 각도와 (수학적)벡터값 저장
         specific = json_data[0]['person'][person_id]['keypoint']  # 우리가 원하는 특정한 객체 specific!
         specific_bt = get_point_list(specific)
-
 
         # 모든 프레임마다 반복하며
         for i in range(0, json_len):
@@ -210,14 +208,10 @@ def get_variance(json_filename, person_id, point_number):
             pre_vec = pre_list[1]
             sub_incl_angle = get_incl_angle(cur_vec, pre_vec) / num_pass
 
-
-            #if i > 0: incl_list.append(sub_incl_angle)
             if i > 0:
                 if math.isnan(sub_incl_angle): incl_list.append(float(0))
                 else: incl_list.append(sub_incl_angle)
 
-
-            #pre_list[point_number][1] = cur_vec
             pre_list[1] = cur_vec
 
             # 여기까지 왔으면 frame 안넘어갔겠다
@@ -248,9 +242,13 @@ def plotting_points():
         except:
             continue
 
-    print(incl_list)
-    print(angle_list)
     plt.scatter(incl_list, angle_list, label="violence")
+
+    # 일정 이상의 수치가 나오는 놈들 출력
+    l = len(angle_list)
+    for i in range(l):
+        if angle_list[i] > 50 or incl_list[i] > 100:
+            print(angle_list[i], incl_list[i])
 
     # 다른 색으로 적용하기 위해 리스트 다시 초기화
     angle_list = []
@@ -265,16 +263,16 @@ def plotting_points():
 
     plt.scatter(incl_list, angle_list, c='red', label="non-violence")
 
-    plt.xlabel('inclination variance')
-    plt.ylabel('angle variance')
-    plt.legend()
-    plt.show()
-
     # 일정 이상의 수치가 나오는 놈들 출력
     l = len(angle_list)
     for i in range(l):
         if angle_list[i] > 50 or incl_list[i] > 100:
             print(angle_list[i], incl_list[i])
 
+    plt.xlabel('inclination variance')
+    plt.ylabel('angle variance')
+    plt.legend()
+    plt.show()
 
-plotting_points()
+
+# plotting_points()
