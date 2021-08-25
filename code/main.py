@@ -1,4 +1,5 @@
 import csv
+from numba import cuda
 
 from child_distinguish import *
 from tracking import tracking
@@ -59,12 +60,14 @@ def get_first_frame(filename, frame_num):
         ret, image = cap.read()
 
     ret, image = cap.read()
+
     if ret:
-        cv2.imwrite(path + f'frame.png', image)
+        image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_CUBIC)
+        cv2.imwrite(path + 'frame.png', image)
 
     cap.release()
 
-    return path + f'frame.png'
+    return path + 'frame.png'
 
 
 def find_adult(file_name, csv_file, frame_num):
@@ -119,15 +122,18 @@ def find_adult(file_name, csv_file, frame_num):
 
 
 if __name__ == "__main__":
-    file_name = "92"
+    file_name = "700"
     path = f'../media/{file_name}.mp4'
 
-    # MOT 돌리기
-    csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
-                         '--input-video', path, '--input-video-name', file_name, \
-                         '--output-root', f'../output/video/{file_name}/final', '--conf_thres', '0.4'])
+    # # MOT 돌리기
+    # csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
+    #                      '--input-video', path, '--input-video-name', file_name, \
+    #                      '--output-root', f'../output/video/{file_name}/final', '--conf_thres', '0.4'])
+    #
+    # # GPU memory 초기화
+    # cuda.close()
 
-    # csv_file = f'../output/video/{file_name}/final/results{file_name}_0.csv'
+    csv_file = f'../output/video/{file_name}/final/results{file_name}_0.csv'
 
     adult_id, frame_num = find_adult(file_name, csv_file, 0)
 
@@ -151,19 +157,19 @@ if __name__ == "__main__":
         # image capture
         ret, image = cap.read()
 
+        # 성인 찾음
+        if line[1] != adult_id:
+            not_detected = True
+
         # 성인이 탐지되지 않았다면
         if not_detected:
             adult_id, frame_num = find_adult(file_name, csv_file, frame_num)
             not_detected = False
             continue
 
-        # 성인 찾음
-        if line[1] != adult_id:
-            not_detected = True
-            continue
-
         # 추적 대상 tracking하며 관절 추출
         if ret:
+            image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_CUBIC)
             skeleton_list.extend(get_skeleton(line[2:6], image, frame_num))
 
         frame_num += 1

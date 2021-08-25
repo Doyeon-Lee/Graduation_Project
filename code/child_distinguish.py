@@ -42,8 +42,8 @@ def child_distinguish(file_name, frame_num):
     candidate_ratio = min(body_ratio_list)
     candidate_key = np.where(body_ratio_list == candidate_ratio)[0][0]
 
-    # 후보를 제외한 평균과 비교했을 때 차이가 0.03 이상 나면 어른으로 간주
-    average = (average - candidate_ratio) / (len(json_data[frame_num]['person']) - 1)
+    # 평균과 비교했을 때 차이가 0.03 이상 나면 어른으로 간주
+    average = average / len(json_data[frame_num]['person'])
     if average - candidate_ratio >= 0.03:
         return candidate_key
 
