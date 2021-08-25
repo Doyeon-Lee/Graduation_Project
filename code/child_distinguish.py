@@ -28,10 +28,16 @@ def child_distinguish(file_name, frame_num):
 
         len_head = ((Head['x'] - Neck['x'])**2 + (Head['y'] - Neck['y'])**2)**0.5
 
-        body_ratio = len_head / (len_head + len_body)
+        if len_head + len_body == 0:
+            continue
+        else:
+            body_ratio = len_head / (len_head + len_body)
 
-        body_ratio_list = np.append(body_ratio_list, body_ratio)
-        average += body_ratio
+            body_ratio_list = np.append(body_ratio_list, body_ratio)
+            average += body_ratio
+
+    if len(body_ratio_list) == 0:
+        return -1
 
     candidate_ratio = min(body_ratio_list)
     candidate_key = np.where(body_ratio_list == candidate_ratio)[0][0]
@@ -43,4 +49,3 @@ def child_distinguish(file_name, frame_num):
 
     # 성인이 없다면 -1을 return
     return -1
-

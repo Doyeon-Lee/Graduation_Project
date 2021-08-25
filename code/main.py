@@ -60,44 +60,35 @@ def get_first_frame(filename, frame_num):
 
     ret, image = cap.read()
     if ret:
-        cv2.imwrite(path + f'frame{frame_num}.png', image)
+        cv2.imwrite(path + f'frame.png', image)
 
     cap.release()
 
-    return path + f'frame{frame_num}.png'
+    return path + f'frame.png'
 
 
-if __name__ == "__main__":
-    file_name = "54"
-    path = f'../media/{file_name}.mp4'
+def find_adult(file_name, csv_file, frame_num):
+    f = open(csv_file, 'r', encoding='utf-8')
+    rdr = csv.reader(f)
+    rdr = list(rdr)
 
     skeleton_id = -1
-    frame_num = 0
     while skeleton_id == -1:
         # 첫 번째 프레임
         first_frame_video = get_first_frame(file_name, frame_num)
 
         # 관절로 성인을 찾고 머리가 가장 비슷한 bbox 찾기
         first_frame_json = detect_skeleton(file_name, ["--image_path", first_frame_video], 'photo', frame_num)
-        skeleton_id = child_distinguish(first_frame_json, frame_num)
+        skeleton_id = child_distinguish(first_frame_json, 0)
 
-        if skeleton_id != -1:
+        if skeleton_id != -1 or int(rdr[-1][0]) < frame_num + 1:
             break
 
         frame_num += 1
 
-    # MOT 돌리기
-    # csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
-    #                      '--input-video', path, '--input-video-name', file_name, \
-    #                      '--output-root', f'../output/video/{file_name}/final', '--conf_thres', '0.4'])
-
-    csv_file = f'../output/video/{file_name}/final/results54_0.csv'
     with open(first_frame_json, 'r') as f:
         json_obj = json.load(f)
-    head = json_obj[frame_num]['person'][skeleton_id]['keypoint']['Head']
-
-    f = open(csv_file, 'r', encoding='utf-8')
-    rdr = csv.reader(f)
+    head = json_obj[0]['person'][skeleton_id]['keypoint']['Head']
 
     minimum = -1  # 가장 작은 차이값
     adult_id = 0  # 차이값이 가장 작은 사람의 id
@@ -124,6 +115,21 @@ if __name__ == "__main__":
                 adult_id = line[1]
 
     f.close()
+    return adult_id, frame_num
+
+
+if __name__ == "__main__":
+    file_name = "92"
+    path = f'../media/{file_name}.mp4'
+
+    # MOT 돌리기
+    csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
+                         '--input-video', path, '--input-video-name', file_name, \
+                         '--output-root', f'../output/video/{file_name}/final', '--conf_thres', '0.4'])
+
+    # csv_file = f'../output/video/{file_name}/final/results{file_name}_0.csv'
+
+    adult_id, frame_num = find_adult(file_name, csv_file, 0)
 
     cap = cv2.VideoCapture(path)
     # frame_num만큼 동영상을 넘김
@@ -133,6 +139,7 @@ if __name__ == "__main__":
     f = open(csv_file, 'r', encoding='utf-8')
     rdr = csv.reader(f)
     skeleton_list = []
+    not_detected = False    # 성인이 탐지되지 않았는가를 나타내는 flag
     for line in rdr:
         # frame 찾음
         if int(line[0]) < frame_num + 1:
@@ -141,27 +148,27 @@ if __name__ == "__main__":
             frame_num += 1
             ret, image = cap.read()
 
-        # 성인 찾음
-        if line[1] != adult_id:
-            continue
-
         # image capture
         ret, image = cap.read()
 
+        # 성인이 탐지되지 않았다면
+        if not_detected:
+            adult_id, frame_num = find_adult(file_name, csv_file, frame_num)
+            not_detected = False
+            continue
+
+        # 성인 찾음
+        if line[1] != adult_id:
+            not_detected = True
+            continue
+
         # 추적 대상 tracking하며 관절 추출
-        skeleton_list.extend(get_skeleton(line[2:6], image, frame_num))
+        if ret:
+            skeleton_list.extend(get_skeleton(line[2:6], image, frame_num))
 
         frame_num += 1
 
-    with open(first_frame_json, 'w', encoding="utf-8") as make_file:
+    with open(f'../output/video/{file_name}/results{file_name}.json', 'w', encoding="utf-8") as make_file:
         json.dump(skeleton_list, make_file, ensure_ascii=False, indent="\t")
 
     cap.release()
-
-# while(동영상이 끝날때까지):
-#
-# 	get_skeleton(x, y, w, h)
-#
-# 	if(id가 달라짐):
-# 		# 어린이집 cctv의 경우
-# 		adult_id = find_adult(file_name, frame_num)
