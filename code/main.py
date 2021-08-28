@@ -9,7 +9,7 @@ from plotting import *
 
 # 전체 프레임에서 bbox만큼 잘라 관절 추출(각도, 기울기는 상대적인 값이기 때문)
 # 팔이 범위를 벗어날 수 있기 때문에 가로 2배
-def get_skeleton(line, image, frame_id):
+def image_crop(line, image, frame_id):
     line = list(map(float, line))
     line = list(map(round, line))
 
@@ -27,29 +27,6 @@ def get_skeleton(line, image, frame_id):
     cropped_image = image[line[1]: line[1] + line[3], x: x1]
     cv2.imwrite(f"../output/video/{get_video_name()}/cropped_image/{frame_id}.png", cropped_image)
 
-    # 잘린 이미지에 대해서 skeleton 뽑아냄
-    json_file = detect_skeleton(file_name, ["--image_path", f"../output/video/{get_video_name()}/cropped_image/{frame_id}.png"], 'photo', frame_id)
-    with open(json_file, 'r') as f:
-        json_data = json.load(f)
-    return json_data
-
-
-# def get_first_frame(filename, frame_num):
-#     path = f'../output/video/{filename}/'
-#     cap = cv2.VideoCapture(f'../media/{filename}.mp4')
-#     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-#     set_frame_size(int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-#     out = cv2.VideoWriter(path + f'{filename}_0.avi', fourcc, 1, get_frame_size())
-#
-#     # frame_num만큼 동영상을 넘김
-#     for i in range(0, frame_num):
-#         ret, image = cap.read()
-#
-#     ret, image = cap.read()
-#     if ret:
-#         out.write(image)
-#
-#     return path + f'{filename}_0.avi'
 
 def get_first_frame(filename, frame_num):
     path = f'../output/video/{filename}/'
@@ -136,37 +113,47 @@ if __name__ == "__main__":
     # # GPU memory 초기화
     # cuda.close()
 
-    csv_file = f'../output/video/{file_name}/final/results{file_name}_0.csv'
+    # csv_file = f'../output/video/{file_name}/final/results{file_name}_0.csv'
+    #
+    # adult_id, frame_num = find_adult(file_name, csv_file, 0)
+    #
+    # f = open(csv_file, 'r', encoding='utf-8')
+    # rdr = csv.reader(f)
+    # not_detected = False    # 성인이 탐지되지 않았는가를 나타내는 flag
+    # for line in rdr:
+    #     # frame 찾음
+    #     if int(line[0]) < frame_num + 1:
+    #         continue
+    #     while int(line[0]) > frame_num + 1:
+    #         frame_num += 1
+    #
+    #     image = cv2.imread(f"../output/video/{file_name}/frames/{frame_num}.png")
+    #
+    #     # 성인 찾음
+    #     if line[1] != adult_id:
+    #         not_detected = True
+    #
+    #     # 성인이 탐지되지 않았다면
+    #     if not_detected:
+    #         adult_id, frame_num = find_adult(file_name, csv_file, frame_num)
+    #         not_detected = False
+    #         continue
+    #
+    #     # 추적 대상 tracking하며 이미지 자름
+    #     image_crop(line[2:6], image, frame_num)
+    #
+    #     frame_num += 1
 
-    adult_id, frame_num = find_adult(file_name, csv_file, 0)
-
-    f = open(csv_file, 'r', encoding='utf-8')
-    rdr = csv.reader(f)
+    # 잘린 이미지에 대해서 skeleton 뽑아냄
+    cropped_image_path = f"../output/video/{get_video_name()}/cropped_image"
+    dir_list = os.listdir(cropped_image_path)
     skeleton_list = []
-    not_detected = False    # 성인이 탐지되지 않았는가를 나타내는 flag
-    for line in rdr:
-        # frame 찾음
-        if int(line[0]) < frame_num + 1:
-            continue
-        while int(line[0]) > frame_num + 1:
-            frame_num += 1
-
-        image = cv2.imread(f"../output/video/{file_name}/frames/{frame_num}.png")
-
-        # 성인 찾음
-        if line[1] != adult_id:
-            not_detected = True
-
-        # 성인이 탐지되지 않았다면
-        if not_detected:
-            adult_id, frame_num = find_adult(file_name, csv_file, frame_num)
-            not_detected = False
-            continue
-
-        # 추적 대상 tracking하며 관절 추출
-        skeleton_list.extend(get_skeleton(line[2:6], image, frame_num))
-
-        frame_num += 1
+    for frame_id in dir_list:
+        frame_id = frame_id.rstrip('.png')
+        json_file = detect_skeleton(get_video_name(), ["--image_path", cropped_image_path + f"/{frame_id}.png"], 'photo', frame_id)
+        with open(json_file, 'r') as f:
+            json_data = json.load(f)
+        skeleton_list.extend(json_data)
 
     with open(f'../output/video/{file_name}/results{file_name}.json', 'w', encoding="utf-8") as make_file:
         json.dump(skeleton_list, make_file, ensure_ascii=False, indent="\t")

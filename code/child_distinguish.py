@@ -41,8 +41,6 @@ def child_distinguish(file_name, frame_num):
 
     candidate_ratio = min(body_ratio_list)
     candidate_key = np.where(body_ratio_list == candidate_ratio)[0][0]
-    ratio_sum, people = get_rate()
-    print(candidate_key, ratio_sum / people, body_ratio_list)
 
     ratio_sum, people = get_rate()
     average = ratio_sum / people
