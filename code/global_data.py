@@ -34,6 +34,13 @@ V_PREPROCESSED_FILEPATH = "../output/json/preprocessed_data/violent/cam2/output"
 FRAME_W = 0
 FRAME_H = 0
 
+# default video name
+VIDEO_NAME = ""
+
+# ratio sum & people
+RATIO_SUM = 0
+PEOPLE = 0
+
 
 def set_frame_size(w, h):
     global FRAME_W, FRAME_H
@@ -44,3 +51,27 @@ def set_frame_size(w, h):
 def get_frame_size():
     return FRAME_W, FRAME_H
 
+
+def get_video_name():
+    return VIDEO_NAME
+
+
+def set_video_name(video_name):
+    global VIDEO_NAME
+    VIDEO_NAME = video_name
+
+
+def init_rate():
+    global RATIO_SUM, PEOPLE
+    RATIO_SUM = 0
+    PEOPLE = 0
+
+
+def set_rate(ratio_sum):
+    global RATIO_SUM, PEOPLE
+    RATIO_SUM += ratio_sum
+    PEOPLE += 1
+
+
+def get_rate():
+    return RATIO_SUM, PEOPLE

@@ -1,5 +1,6 @@
 import json
 import numpy as np
+from global_data import set_rate, get_rate
 
 
 def child_distinguish(file_name, frame_num):
@@ -8,7 +9,6 @@ def child_distinguish(file_name, frame_num):
         json_data = json.load(f)
 
     body_ratio_list = np.array([])
-    average = 0
     for person_num in range(0, len(json_data[frame_num]['person'])):
         Head = json_data[frame_num]['person'][person_num]['keypoint']['Head']
         Neck = json_data[frame_num]['person'][person_num]['keypoint']['Neck']
@@ -34,18 +34,26 @@ def child_distinguish(file_name, frame_num):
             body_ratio = len_head / (len_head + len_body)
 
             body_ratio_list = np.append(body_ratio_list, body_ratio)
-            average += body_ratio
+            set_rate(body_ratio)
 
     if len(body_ratio_list) == 0:
         return -1
 
     candidate_ratio = min(body_ratio_list)
     candidate_key = np.where(body_ratio_list == candidate_ratio)[0][0]
+    ratio_sum, people = get_rate()
+    print(candidate_key, ratio_sum / people, body_ratio_list)
 
-    # 평균과 비교했을 때 차이가 0.03 이상 나면 어른으로 간주
-    average = average / len(json_data[frame_num]['person'])
-    if average - candidate_ratio >= 0.03:
-        return candidate_key
+    ratio_sum, people = get_rate()
+    average = ratio_sum / people
+    # 성인이 많이 인식되어 평균값이 성인에 가까울 때
+    if average < 0.35:
+        if abs(average - candidate_ratio) <= 0.01:
+            return candidate_key
+    # 아이가 많이 인식되어 평균값이 아이에 가까울 때
+    else:
+        if average - candidate_ratio >= 0.03:
+            return candidate_key
 
     # 성인이 없다면 -1을 return
     return -1

@@ -15,20 +15,20 @@ def get_skeleton(line, image, frame_id):
 
     # 이미지 잘라서 저장
     x = line[0] - line[2] // 2
-    if x < 0:
-        x = 0
-
     w = line[2] * 2
     if x + w > image.shape[1]:
         x1 = image.shape[1]
     else:
         x1 = x + w
 
+    if x < 0:
+        x = 0
+
     cropped_image = image[line[1]: line[1] + line[3], x: x1]
-    cv2.imwrite("cropped_image.png", cropped_image)
+    cv2.imwrite(f"../output/video/{get_video_name()}/cropped_image/{frame_id}.png", cropped_image)
 
     # 잘린 이미지에 대해서 skeleton 뽑아냄
-    json_file = detect_skeleton(file_name, ["--image_path", "cropped_image.png"], 'photo', frame_id)
+    json_file = detect_skeleton(file_name, ["--image_path", f"../output/video/{get_video_name()}/cropped_image/{frame_id}.png"], 'photo', frame_id)
     with open(json_file, 'r') as f:
         json_data = json.load(f)
     return json_data
@@ -123,7 +123,10 @@ def find_adult(file_name, csv_file, frame_num):
 
 if __name__ == "__main__":
     file_name = "700"
+    set_video_name(file_name)
     path = f'../media/{file_name}.mp4'
+
+    init_rate()
 
     # # MOT 돌리기
     # csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
@@ -137,11 +140,6 @@ if __name__ == "__main__":
 
     adult_id, frame_num = find_adult(file_name, csv_file, 0)
 
-    cap = cv2.VideoCapture(path)
-    # frame_num만큼 동영상을 넘김
-    for i in range(0, frame_num):
-        ret, image = cap.read()
-
     f = open(csv_file, 'r', encoding='utf-8')
     rdr = csv.reader(f)
     skeleton_list = []
@@ -152,10 +150,8 @@ if __name__ == "__main__":
             continue
         while int(line[0]) > frame_num + 1:
             frame_num += 1
-            ret, image = cap.read()
 
-        # image capture
-        ret, image = cap.read()
+        image = cv2.imread(f"../output/video/{file_name}/frames/{frame_num}.png")
 
         # 성인 찾음
         if line[1] != adult_id:
@@ -168,13 +164,9 @@ if __name__ == "__main__":
             continue
 
         # 추적 대상 tracking하며 관절 추출
-        if ret:
-            image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_CUBIC)
-            skeleton_list.extend(get_skeleton(line[2:6], image, frame_num))
+        skeleton_list.extend(get_skeleton(line[2:6], image, frame_num))
 
         frame_num += 1
 
     with open(f'../output/video/{file_name}/results{file_name}.json', 'w', encoding="utf-8") as make_file:
         json.dump(skeleton_list, make_file, ensure_ascii=False, indent="\t")
-
-    cap.release()
