@@ -156,5 +156,27 @@ if __name__ == "__main__":
 
         frame_num += 1
 
-    with open(f'../output/video/{file_name}/results{file_name}.json', 'w', encoding="utf-8") as make_file:
+    # json파일로 저장
+    skeleton_json_file = f'../output/video/{file_name}/results{file_name}.json'
+    with open(skeleton_json_file, 'w', encoding="utf-8") as make_file:
         json.dump(skeleton_list, make_file, ensure_ascii=False, indent="\t")
+
+    # 관절들의 변화량을 list로 저장
+    angle_arm = []; incli_arm = []
+    angle_leg = []; incli_leg = []
+    for i in range(4):
+        angle, incli = get_variance(skeleton_json_file, i)
+        if i is 0 or i is 1:
+            angle_arm.extend(angle)
+            incli_arm.extend(incli)
+        elif i is 2 or i is 3:
+            angle_leg.extend(angle)
+            incli_leg.extend(incli)
+
+    # plotting
+    plt.scatter(incli_leg, angle_leg, label="leg")
+    plt.scatter(incli_arm, angle_arm, c='red', label="arm")
+    plt.xlabel('inclination variance')
+    plt.ylabel('angle variance')
+    plt.legend()
+    plt.show()

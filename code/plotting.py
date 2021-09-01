@@ -151,7 +151,7 @@ def make_preprocessed_json(json_filename, person_id):
 
 
 # person id는 plotting 결과를 얻고자 함수를 반복하기 위해 임의로 넣은 것
-def get_variance(json_filename, person_id, point_number):
+def get_variance(json_filename, point_number):
     with open(json_filename) as f:
         json_data = json.load(f)
         json_len = len(json_data)
@@ -160,7 +160,7 @@ def get_variance(json_filename, person_id, point_number):
 
         num_pass = 1 # 해당 관절에서 넘어간 프레임의 수(3개 점중 하나라도 0이거나 신뢰도가 낮으면)
         pre_list = [0.0, [0, 0]] # 해당 관절에 대한 직전 각도와 (수학적)벡터값 저장
-        specific = json_data[0]['person'][person_id]['keypoint']  # 우리가 원하는 특정한 객체 specific!
+        specific = json_data[0]['person'][0]['keypoint']  # 우리가 원하는 특정한 객체 specific!
         specific_bt = get_point_list(specific)
 
         # 모든 프레임마다 반복하며

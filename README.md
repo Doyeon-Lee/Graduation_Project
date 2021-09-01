@@ -7,4 +7,4 @@ Violence Detection
 4. 이 리포지토리를 1에서 만든 프로젝트 폴더 밑에 다운로드 후 이름을 main으로 변경
 5. FairMOT/src/track.py의 25번째 줄에 import sys
 sys.path.append('../../../../main/code')
-from global_data import get_video_name를 추가해 주고, 83번째 줄에 cv2.imwrite(f"../../main/output/video/{get_video_name()}/frames/{frame_id}.png", img0)를 추가해준다.
+from global_data import get_video_name를 추가해 주고, 82번째 줄에 os.makedirs(f"../../main/output/video/{get_video_name()}/frames")를, 84번째 줄에 cv2.imwrite(f"../../main/output/video/{get_video_name()}/frames/{frame_id}.png", img0)를 추가해준다.
