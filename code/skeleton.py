@@ -2,7 +2,7 @@ from global_data import *
 from rw_json import *
 
 
-def detect_skeleton(file_name, path='', input_type='video', frame_id=-1):
+def detect_skeleton(file_name, path='', input_type='video', frame_id=-1, cropped=False):
     try:
         # Import Openpose (Windows/Ubuntu/OSX)
         try:
@@ -70,7 +70,8 @@ def detect_skeleton(file_name, path='', input_type='video', frame_id=-1):
         datum = op.Datum()
         if input_type == 'photo':
             imageToProcess = cv2.imread(args[0].image_path)
-            imageToProcess = cv2.resize(imageToProcess, (1920, 1080), interpolation=cv2.INTER_CUBIC)
+            if not cropped:
+                imageToProcess = cv2.resize(imageToProcess, (1920, 1080), interpolation=cv2.INTER_CUBIC)
             datum.cvInputData = imageToProcess
             opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 
