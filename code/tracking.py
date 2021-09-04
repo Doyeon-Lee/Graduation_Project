@@ -16,6 +16,8 @@ from tracking_utils.log import logger
 import datasets.dataset.jde as datasets
 from track import eval_seq
 
+from global_data import get_frame_size
+
 logger.setLevel(logging.INFO)
 
 
@@ -48,4 +50,5 @@ def demo(opt):
 def tracking(args):
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     opt = opts().init(args)
+    opt.img_size = get_frame_size()
     return demo(opt)

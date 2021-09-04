@@ -1,14 +1,3 @@
-import numpy as np
-import sys
-import cv2
-import os
-from sys import platform
-import argparse
-import json
-from math import atan2, degrees
-import matplotlib.pyplot as plt
-
-
 body_point = ["Head", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
               "RHip", "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle", "Chest", "Background"]
 
@@ -44,8 +33,9 @@ PEOPLE = 0
 
 def set_frame_size(w, h):
     global FRAME_W, FRAME_H
-    FRAME_W = w
-    FRAME_H = h
+    # 32의 배수로 맞춰줌(FairMOT 조건)
+    FRAME_W = w // 32 * 32
+    FRAME_H = h // 32 * 32
 
 
 def get_frame_size():

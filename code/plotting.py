@@ -1,5 +1,9 @@
-from rw_json import *
 import math
+import json
+import numpy as np
+import matplotlib.pyplot as plt
+
+from rw_json import *
 
 
 # 세 점 사이의 각도 구하기
