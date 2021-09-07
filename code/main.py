@@ -35,12 +35,14 @@ def get_skeleton(line, image, frame_id):
 
     if x < 0:
         x = 0
+    if y < 0:
+        y = 0
 
     cropped_image = image[y: y1, x: x1]
     cv2.imwrite(f"../output/video/{get_video_name()}/cropped_image/{frame_id}.png", cropped_image)
 
     # 잘린 이미지에 대해서 skeleton 뽑아냄
-    json_file = detect_skeleton(file_name,
+    json_file = detect_skeleton(get_video_name(),
                                 ["--image_path", f"../output/video/{get_video_name()}/cropped_image/{frame_id}.png"],
                                 'photo', frame_id, True)
     with open(json_file, 'r') as f:
@@ -48,50 +50,37 @@ def get_skeleton(line, image, frame_id):
     return json_data
 
 
-def get_first_frame(filename, frame_num):
-    path = f'../output/video/{filename}/'
-    cap = cv2.VideoCapture(f'../media/{filename}.mp4')
-
-    # frame_num만큼 동영상을 넘김
-    for i in range(0, frame_num):
-        ret, image = cap.read()
-
-    ret, image = cap.read()
-
-    if ret:
-        image = cv2.resize(image, get_frame_size(), interpolation=cv2.INTER_CUBIC)
-        cv2.imwrite(path + 'frame.png', image)
-
-    cap.release()
-
-    return path + 'frame.png'
-
-
-def find_adult(file_name, csv_file, frame_num):
+def find_adult(csv_file, frame_num):
     f = open(csv_file, 'r', encoding='utf-8')
     rdr = csv.reader(f)
     rdr = list(rdr)
 
     skeleton_id = -1
     while skeleton_id == -1:
+        # 프레임 수가 넘어가면 break
+        if int(rdr[-1][0]) < frame_num + 1:
+            break
+
         # 첫 번째 프레임
-        first_frame_image = get_first_frame(file_name, frame_num)
+        first_frame_image = f'../output/video/{get_video_name()}/frames/{frame_num}.png'
 
         # 관절로 성인을 찾고 머리가 가장 비슷한 bbox 찾기
-        first_frame_json = detect_skeleton(file_name, ["--image_path", first_frame_image], 'photo', frame_num)
+        first_frame_json = detect_skeleton(get_video_name(), ["--image_path", first_frame_image], 'photo', frame_num)
         skeleton_id = child_distinguish(first_frame_json, 0)
-
-        if skeleton_id != -1 or int(rdr[-1][0]) < frame_num + 1:
-            break
 
         frame_num += 1
 
     with open(first_frame_json, 'r') as f:
         json_obj = json.load(f)
     head = json_obj[0]['person'][skeleton_id]['keypoint']['Head']
+    neck = json_obj[0]['person'][skeleton_id]['keypoint']['Neck']
+
+    # 성인의 bbox를 확인할 수 없음
+    if head['accuracy'] < 0.5 or neck['accuracy'] < 0.5:
+        return -1, frame_num + 1
 
     minimum = -1  # 가장 작은 차이값
-    adult_id = 0  # 차이값이 가장 작은 사람의 id
+    adult_id = -1  # 차이값이 가장 작은 사람의 id
     idx = 0
     # frame 찾음
     while int(rdr[idx][0]) < frame_num + 1:
@@ -106,10 +95,15 @@ def find_adult(file_name, csv_file, frame_num):
             break
 
     for line in tmp_list:
+        # neck의 좌표가 bbox의 범위 내에 있는지 확인
+        if not (float(line[2]) <= neck['x'] <= float(line[2]) + float(line[4]) and \
+                float(line[3]) <= neck['y'] <= float(line[3]) + float(line[5])):
+            continue
+
         # x좌표
         x = float(line[2]) + float(line[4]) / 2
-        # y좌표
-        y = float(line[3])
+        # y좌표, y좌표가 음수인 경우를 대비해 max 함수 사용
+        y = max(float(line[3]), 0)
 
         # x좌표와 y좌표의 차이
         x_diff = abs(head["x"] - x)
@@ -154,20 +148,21 @@ if __name__ == "__main__":
     csv_file = f'../output/video/{file_name}/final/results{file_name}_0.csv'
 
     # 성인의 id와 현재 frame 번호
-    adult_id, frame_num = find_adult(file_name, csv_file, 0)
-    adult_frame = frame_num     # 성인이 탐지된 frame 번호
+    adult_id, frame_num = find_adult(csv_file, 0)
 
     f = open(csv_file, 'r', encoding='utf-8')
     rdr = csv.reader(f)
     rdr = list(rdr)
 
-    idx = 0  # 현재 프레임의 마지막줄
+    idx = 6595  # 현재 프레임의 첫번째줄
     rdr_size = len(rdr)
     skeleton_list = []
     while idx < rdr_size:
         # frame 찾음
         while int(rdr[idx][0]) < frame_num + 1:
             idx += 1
+        while int(rdr[idx][0]) > frame_num + 1:
+            frame_num += 1
 
         # frame_id가 동일한 line들을 list로 만듦
         tmp_list = []
@@ -190,7 +185,9 @@ if __name__ == "__main__":
 
         # 현재 frame_num에서 성인이 발견되지 않았다면 성인 재탐지
         if not_detected:
-            adult_id, frame_num = find_adult(file_name, csv_file, frame_num)
+            # 성인의 id를 새로 찾기 위해 -1로 초기화
+            adult_id = -1
+            adult_id, frame_num = find_adult(csv_file, frame_num)
             continue
 
         frame_num += 1

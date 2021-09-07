@@ -11,12 +11,18 @@ def child_distinguish(file_name, frame_num):
     body_ratio_list = np.array([])
     for person_num in range(0, len(json_data[frame_num]['person'])):
         Head = json_data[frame_num]['person'][person_num]['keypoint']['Head']
+        Chest = json_data[frame_num]['person'][person_num]['keypoint']['Chest']
 
         RShoulder = json_data[frame_num]['person'][person_num]['keypoint']['RShoulder']
         LShoulder = json_data[frame_num]['person'][person_num]['keypoint']['LShoulder']
 
         RHip = json_data[frame_num]['person'][person_num]['keypoint']['RHip']
         LHip = json_data[frame_num]['person'][person_num]['keypoint']['LHip']
+
+        # 머리/어깨/가슴/엉덩이가 인식이 안되면 넘어감
+        if Head['accuracy'] < 0.5 or (RShoulder['accuracy'] < 0.5 and LShoulder['accuracy'] < 0.5) or\
+            Chest['accuracy'] < 0.5 or (RHip['accuracy'] < 0.5 and LHip['accuracy'] < 0.5):
+            continue
 
         if RShoulder['accuracy'] < 0.5:
             Shoulder = LShoulder
@@ -36,9 +42,10 @@ def child_distinguish(file_name, frame_num):
             # 엉덩이의 가운데 점을 사용
             Hip = {'x': (RHip['x'] + LHip['x']) / 2, 'y': (RHip['y'] + LHip['y']) / 2}
 
-        len_body = ((Shoulder['x'] - Hip['x'])**2 + (Shoulder['y'] - Hip['y'])**2)**0.5
+        len_body = ((Shoulder['x'] - Chest['x'])**2 + (Shoulder['y'] - Chest['y'])**2)**0.5 + \
+                   ((Chest['x'] - Hip['x'])**2 + (Chest['y'] - Hip['y'])**2)**0.5
 
-        if len_head + len_body == 0:
+        if len_head == 0 or len_head + len_body == 0:
             continue
         else:
             body_ratio = len_head / (len_head + len_body)
@@ -54,20 +61,21 @@ def child_distinguish(file_name, frame_num):
 
     ratio_sum, people = get_rate()
     average = ratio_sum / people
-    # 표준편차값이 0.01보다 작으면 성인이 감지되지 않았다고 생각
-    if np.std(body_ratio_list) < 0.015:
+
+    print(average, candidate_key, body_ratio_list)
+    # 표준편차값이 0.0175보다 작으면 성인이 감지되지 않았다고 생각
+    # 성인의 자세가 흐트러졌을 경우 관절을 잘못 인식할 수 있기 때문에 제외
+    if np.std(body_ratio_list) < 0.0175:
         return -1
     else:
-        return candidate_key
+        # 성인이 많이 인식되어 평균값이 성인에 가까울 때
+        if average < 0.45:
+            if abs(average - candidate_ratio) <= 0.024:
+                return candidate_key
+        # 아이가 많이 인식되어 평균값이 아이에 가까울 때
+        else:
+            if average - candidate_ratio >= 0.024:
+                return candidate_key
 
-    # # 성인이 많이 인식되어 평균값이 성인에 가까울 때
-    # if average < 0.45:
-    #     if abs(average - candidate_ratio) <= 0.001:
-    #         return candidate_key
-    # # 아이가 많이 인식되어 평균값이 아이에 가까울 때
-    # else:
-    #     if average - candidate_ratio >= 0.005:
-    #         return candidate_key
-    #
-    # # 성인이 없다면 -1을 return
-    # return -1
+    # 성인이 없다면 -1을 return
+    return -1

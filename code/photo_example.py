@@ -23,7 +23,7 @@ def make_json(datum, frame_id, img):
         tmp = int(person_bodypoint[5][0] - person_bodypoint[2][0])
         # img = cv2.rectangle(img, (int(person_bodypoint[5][0]), int(person_bodypoint[5][1] - tmp)), (\
         #     int(person_bodypoint[2][0]), int(person_bodypoint[22][1])), (0, 255, 0), 3)
-        img = cv2.putText(img, str(person_id), (int(person_bodypoint[3][0]), int(person_bodypoint[5][1] - tmp)), \
+        img = cv2.putText(img, str(person_id), (int(person_bodypoint[0][0]), int(person_bodypoint[0][1])), \
                           cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 4)
 
         location = {}
@@ -69,7 +69,7 @@ try:
 
     # Flags
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", default="../output/video/800/frames/0.png", help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
+    parser.add_argument("--image_path", default="../output/video/800/frames/3531.png", help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
     args = parser.parse_known_args()
 
     # Custom Params (refer to include/openpose/flags.hpp for more parameters)
@@ -111,7 +111,7 @@ try:
     cv2.waitKey(0)
 
     # save the keypoint as a list
-    draw_img = cv2.imread("../output/video/800/frames/0.png", cv2.IMREAD_COLOR)
+    draw_img = cv2.imread("../output/video/800/frames/3531.png", cv2.IMREAD_COLOR)
     picture_json = [make_json(datum, 0, draw_img)]
 
     # with open('../output/json/picture/family1.json', 'w', encoding="utf-8") as make_file:
