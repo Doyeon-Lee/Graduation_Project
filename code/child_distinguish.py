@@ -3,10 +3,15 @@ import numpy as np
 from global_data import set_rate, get_rate
 
 
-def child_distinguish(file_name, frame_num):
-    # json 파일 열기
-    with open(file_name, 'r') as f:
-        json_data = json.load(f)
+def child_distinguish(frame_num, file_name="", data=None):
+    if data is None:
+        data = [{}]
+    if file_name != "":
+        # json 파일 열기
+        with open(file_name, 'r') as f:
+            json_data = json.load(f)
+    else:
+        json_data = data
 
     body_ratio_list = np.array([])
     for person_num in range(0, len(json_data[frame_num]['person'])):
@@ -50,8 +55,10 @@ def child_distinguish(file_name, frame_num):
         else:
             body_ratio = len_head / (len_head + len_body)
 
-            body_ratio_list = np.append(body_ratio_list, body_ratio)
-            set_rate(body_ratio)
+            # 비율이 0.4보다 작으면 제대로 추출되지 않았다고 간주
+            if body_ratio >= 0.4:
+                body_ratio_list = np.append(body_ratio_list, body_ratio)
+                set_rate(body_ratio)
 
     if len(body_ratio_list) == 0:
         return -1
@@ -74,7 +81,7 @@ def child_distinguish(file_name, frame_num):
                 return candidate_key
         # 아이가 많이 인식되어 평균값이 아이에 가까울 때
         else:
-            if average - candidate_ratio >= 0.024:
+            if average - candidate_ratio >= 0.03:
                 return candidate_key
 
     # 성인이 없다면 -1을 return
