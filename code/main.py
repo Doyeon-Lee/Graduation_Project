@@ -77,11 +77,11 @@ def find_adult(csv_file, frame_num):
     neck = json_obj[0]['person'][skeleton_id]['keypoint']['Neck']
 
     # 성인의 bbox를 확인할 수 없음
-    if head['accuracy'] < 0.5 or neck['accuracy'] < 0.5:
+    if head['accuracy'] < 0.7 or neck['accuracy'] < 0.7:
         return -2, frame_num + 1, first_frame_json, skeleton_id
 
     minimum = -1  # 가장 작은 차이값
-    adult_id = -1  # 차이값이 가장 작은 사람의 id
+    adult_id = -2  # 차이값이 가장 작은 사람의 id
     idx = 0
     # frame 찾음
     while int(rdr[idx][0]) < frame_num + 1:
@@ -126,35 +126,46 @@ def find_adult(csv_file, frame_num):
                 adult_id = line[1]
 
     f.close()
-    return adult_id, frame_num, -1, -1
+    return adult_id, frame_num, first_frame_json, skeleton_id
 
 
 def tracking_by_skeleton(json_obj, skeleton_list, frame_num, skeleton_id):
-    distance = 0
-    key_count = 0
-    for key in body_point[:-1]:
-        if json_obj[0]['person'][skeleton_id]['keypoint'][key]['accuracy'] >= 0.5:
-            x = json_obj[0]['person'][skeleton_id]['keypoint'][key]['x']
-            y = json_obj[0]['person'][skeleton_id]['keypoint'][key]['y']
-            key_count += 1
-        else:
-            continue
-        if len(skeleton_list) != 0:
-            skeleton_id2 = child_distinguish(0, "", [skeleton_list[-1]])
-            x2 = skeleton_list[-1]['person'][skeleton_id2]['keypoint'][key]['x']
-            y2 = skeleton_list[-1]['person'][skeleton_id2]['keypoint'][key]['y']
-        # skeleton_list가 비어있으면(첫 번째 프레임이어서 성인 탐지가 안되어 있으면)
-        # 무조건 성인으로 탐지한 skeleton 값을 집어넣음
-        else:
-            json_obj[0]['person'][skeleton_id]['person_id'] = 0
-            skeleton_list.append({"frame_id": frame_num - 1, "person": [json_obj[0]['person'][skeleton_id]]})
-            return skeleton_list
-        distance += abs(x - x2) + abs(y - y2)
+    # skeleton_list가 비어있으면(첫 번째 프레임이어서 성인 탐지가 안되어 있으면)
+    # 무조건 성인으로 탐지한 skeleton 값을 집어넣음
+    if len(skeleton_list) == 0:
+        set_prev_adult_point(get_current_adult_point())
 
-    w, h = get_frame_size()
-    if distance / key_count < w / 16:
         json_obj[0]['person'][skeleton_id]['person_id'] = 0
         skeleton_list.append({"frame_id": frame_num - 1, "person": [json_obj[0]['person'][skeleton_id]]})
+        crop([skeleton_list[-1]])
+        return skeleton_list
+
+    distance = 0
+    key_count = 0
+    adult_obj = get_prev_adult_point()
+    for key in body_point[:-1]:
+        if json_obj[0]['person'][skeleton_id]['keypoint'][key]['accuracy'] >= 0.7:
+            x = json_obj[0]['person'][skeleton_id]['keypoint'][key]['x']
+            y = json_obj[0]['person'][skeleton_id]['keypoint'][key]['y']
+
+            x2 = adult_obj[key]['x']
+            y2 = adult_obj[key]['y']
+            accuracy = adult_obj[key]['accuracy']
+
+            # 정확도가 높으면 움직인 거리 계산
+            if accuracy >= 0.7:
+                key_count += 1
+                distance += ((x - x2) ** 2 + (y - y2) ** 2) ** 0.5
+
+    w, h = get_frame_size()
+    skipped_frame_num = (frame_num - 1) - skeleton_list[-1]['frame_id']   # 넘어간 프레임 개수
+    print(distance / key_count, w * skipped_frame_num / 310)
+    if key_count > 0 and distance / key_count < w * skipped_frame_num / 310:
+        set_prev_adult_point(get_current_adult_point())
+
+        json_obj[0]['person'][skeleton_id]['person_id'] = 0
+        skeleton_list.append({"frame_id": frame_num - 1, "person": [json_obj[0]['person'][skeleton_id]]})
+        crop([skeleton_list[-1]])
     return skeleton_list
 
 
@@ -167,13 +178,23 @@ def crop(skeleton_list):
         x2 = int(skeleton_list[i]['person'][0]['keypoint']['RShoulder']['x'])
         y1 = int(skeleton_list[i]['person'][0]['keypoint']['Head']['y'])
         y2 = int(skeleton_list[i]['person'][0]['keypoint']['Chest']['y'])
+
+        if x1 > x2:
+            tmp = x1
+            x1 = x2
+            x2 = tmp
+        if y1 > y2:
+            tmp = y1
+            y1 = y2
+            y2 = tmp
+
         cropped_image = image[y1: y2, x1: x2]
         cv2.imwrite(f"../output/video/{get_video_name()}/cropped_image/{frame_num}.png", cropped_image)
         i += 1
 
 
 if __name__ == "__main__":
-    file_name = "218"
+    file_name = "w2"
     set_video_name(file_name)
     path = f'../media/{get_video_name()}.mp4'
 
@@ -272,8 +293,6 @@ if __name__ == "__main__":
     skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
     with open(skeleton_json_file, 'w', encoding="utf-8") as make_file:
         json.dump(skeleton_list, make_file, ensure_ascii=False, indent="\t")
-
-    # crop(skeleton_list)
 
     # 관절들의 변화량을 list로 저장
     angle_arm = []; incli_arm = []

@@ -30,6 +30,42 @@ VIDEO_NAME = ""
 RATIO_SUM = 0
 PEOPLE = 0
 
+# 성인의 관절 좌표값
+CURRENT_POINT_OF_ADULT = {
+    "Head": {"x": 0, "y": 0, "accuracy": 0},
+    "Neck": {"x": 0, "y": 0, "accuracy": 0},
+    "RShoulder": {"x": 0, "y": 0, "accuracy": 0},
+    "RElbow": {"x": 0, "y": 0, "accuracy": 0},
+    "RWrist": {"x": 0, "y": 0, "accuracy": 0},
+    "LShoulder": {"x": 0, "y": 0, "accuracy": 0},
+    "LElbow": {"x": 0, "y": 0, "accuracy": 0},
+    "LWrist": {"x": 0, "y": 0, "accuracy": 0},
+    "RHip": {"x": 0, "y": 0, "accuracy": 0},
+    "RKnee": {"x": 0, "y": 0, "accuracy": 0},
+    "RAnkle": {"x": 0, "y": 0, "accuracy": 0},
+    "LHip": {"x": 0, "y": 0, "accuracy": 0},
+    "LKnee": {"x": 0, "y": 0, "accuracy": 0},
+    "LAnkle": {"x": 0, "y": 0, "accuracy": 0},
+    "Chest": {"x": 0, "y": 0, "accuracy": 0}
+}
+PREV_POINT_OF_ADULT = {
+    "Head": {"x": 0, "y": 0, "accuracy": 0},
+    "Neck": {"x": 0, "y": 0, "accuracy": 0},
+    "RShoulder": {"x": 0, "y": 0, "accuracy": 0},
+    "RElbow": {"x": 0, "y": 0, "accuracy": 0},
+    "RWrist": {"x": 0, "y": 0, "accuracy": 0},
+    "LShoulder": {"x": 0, "y": 0, "accuracy": 0},
+    "LElbow": {"x": 0, "y": 0, "accuracy": 0},
+    "LWrist": {"x": 0, "y": 0, "accuracy": 0},
+    "RHip": {"x": 0, "y": 0, "accuracy": 0},
+    "RKnee": {"x": 0, "y": 0, "accuracy": 0},
+    "RAnkle": {"x": 0, "y": 0, "accuracy": 0},
+    "LHip": {"x": 0, "y": 0, "accuracy": 0},
+    "LKnee": {"x": 0, "y": 0, "accuracy": 0},
+    "LAnkle": {"x": 0, "y": 0, "accuracy": 0},
+    "Chest": {"x": 0, "y": 0, "accuracy": 0}
+}
+
 
 def set_frame_size(w, h):
     global FRAME_W, FRAME_H
@@ -65,3 +101,21 @@ def set_rate(ratio_sum):
 
 def get_rate():
     return RATIO_SUM, PEOPLE
+
+
+def set_current_adult_point(points_dict):
+    global CURRENT_POINT_OF_ADULT
+    CURRENT_POINT_OF_ADULT = points_dict
+
+
+def get_current_adult_point():
+    return CURRENT_POINT_OF_ADULT
+
+
+def set_prev_adult_point(points_dict):
+    global PREV_POINT_OF_ADULT
+    PREV_POINT_OF_ADULT = points_dict
+
+
+def get_prev_adult_point():
+    return PREV_POINT_OF_ADULT

@@ -60,7 +60,13 @@ def person_distance(specific_bt, person_bt):
     if num_cnt is 0: return 0
     return dist / num_cnt
 
-# 한 동영상에서-사람별-관절별-각도, 기울기 변화
+
+# 기울기 구하기
+def get_incl(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+
+    return abs(y1-y2) / abs(x1-x2)
 
 
 # 특정 프레임수 단위로 끊어 그 값들을 평균을 낸다
