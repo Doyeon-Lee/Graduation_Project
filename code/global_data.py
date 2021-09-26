@@ -89,3 +89,7 @@ def set_prev_adult_point(points_dict):
 
 def get_prev_adult_point():
     return PREV_POINT_OF_ADULT
+
+
+def swap(x, y):
+    return y, x

@@ -33,10 +33,8 @@ def get_skeleton(line, image, frame_id):
     else:
         y1 = y + h
 
-    if x < 0:
-        x = 0
-    if y < 0:
-        y = 0
+    x = max(x, 0)
+    y = max(y, 0)
 
     cropped_image = image[y: y1, x: x1]
     cv2.imwrite(f"../output/video/{get_video_name()}/cropped_image/{frame_id}.png", cropped_image)
@@ -180,13 +178,9 @@ def crop(skeleton_list):
         y2 = int(skeleton_list[i]['person'][0]['keypoint']['Chest']['y'])
 
         if x1 > x2:
-            tmp = x1
-            x1 = x2
-            x2 = tmp
+            x1, x2 = swap(x1, x2)
         if y1 > y2:
-            tmp = y1
-            y1 = y2
-            y2 = tmp
+            y1, y2 = swap(y1, y1)
 
         cropped_image = image[y1: y2, x1: x2]
         cv2.imwrite(f"../output/video/{get_video_name()}/cropped_image/{frame_num}.png", cropped_image)
