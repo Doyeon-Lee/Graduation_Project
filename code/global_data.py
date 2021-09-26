@@ -30,41 +30,11 @@ VIDEO_NAME = ""
 RATIO_SUM = 0
 PEOPLE = 0
 
-# 성인의 관절 좌표값
-CURRENT_POINT_OF_ADULT = {
-    "Head": {"x": 0, "y": 0, "accuracy": 0},
-    "Neck": {"x": 0, "y": 0, "accuracy": 0},
-    "RShoulder": {"x": 0, "y": 0, "accuracy": 0},
-    "RElbow": {"x": 0, "y": 0, "accuracy": 0},
-    "RWrist": {"x": 0, "y": 0, "accuracy": 0},
-    "LShoulder": {"x": 0, "y": 0, "accuracy": 0},
-    "LElbow": {"x": 0, "y": 0, "accuracy": 0},
-    "LWrist": {"x": 0, "y": 0, "accuracy": 0},
-    "RHip": {"x": 0, "y": 0, "accuracy": 0},
-    "RKnee": {"x": 0, "y": 0, "accuracy": 0},
-    "RAnkle": {"x": 0, "y": 0, "accuracy": 0},
-    "LHip": {"x": 0, "y": 0, "accuracy": 0},
-    "LKnee": {"x": 0, "y": 0, "accuracy": 0},
-    "LAnkle": {"x": 0, "y": 0, "accuracy": 0},
-    "Chest": {"x": 0, "y": 0, "accuracy": 0}
-}
-PREV_POINT_OF_ADULT = {
-    "Head": {"x": 0, "y": 0, "accuracy": 0},
-    "Neck": {"x": 0, "y": 0, "accuracy": 0},
-    "RShoulder": {"x": 0, "y": 0, "accuracy": 0},
-    "RElbow": {"x": 0, "y": 0, "accuracy": 0},
-    "RWrist": {"x": 0, "y": 0, "accuracy": 0},
-    "LShoulder": {"x": 0, "y": 0, "accuracy": 0},
-    "LElbow": {"x": 0, "y": 0, "accuracy": 0},
-    "LWrist": {"x": 0, "y": 0, "accuracy": 0},
-    "RHip": {"x": 0, "y": 0, "accuracy": 0},
-    "RKnee": {"x": 0, "y": 0, "accuracy": 0},
-    "RAnkle": {"x": 0, "y": 0, "accuracy": 0},
-    "LHip": {"x": 0, "y": 0, "accuracy": 0},
-    "LKnee": {"x": 0, "y": 0, "accuracy": 0},
-    "LAnkle": {"x": 0, "y": 0, "accuracy": 0},
-    "Chest": {"x": 0, "y": 0, "accuracy": 0}
-}
+
+def initPoint():
+    for key in body_point:
+        CURRENT_POINT_OF_ADULT[key] = {"x": 0, "y": 0, "accuracy": 0} # 성인의 관절 좌표값
+        PREV_POINT_OF_ADULT[key] = {"x": 0, "y": 0, "accuracy": 0}
 
 
 def set_frame_size(w, h):

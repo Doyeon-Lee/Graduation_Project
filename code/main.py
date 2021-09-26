@@ -199,6 +199,7 @@ if __name__ == "__main__":
     path = f'../media/{get_video_name()}.mp4'
 
     init_rate()
+    initPoint()
     # frame_size 정해줌
     cap = cv2.VideoCapture(path)
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
