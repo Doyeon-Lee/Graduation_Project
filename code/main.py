@@ -9,7 +9,7 @@ from global_data import *
 from child_distinguish import child_distinguish
 from tracking import tracking
 from skeleton import detect_skeleton
-from plotting import get_variance
+from plotting import get_variance, get_distance
 
 
 # 전체 프레임에서 bbox만큼 잘라 관절 추출(각도, 기울기는 상대적인 값이기 때문)
@@ -65,18 +65,19 @@ def find_adult(csv_file, frame_num):
 
         # 관절로 성인을 찾고 머리가 가장 비슷한 bbox 찾기
         first_frame_json = detect_skeleton(get_video_name(), ["--image_path", first_frame_image], 'photo', frame_num)
-        skeleton_id = child_distinguish(0, first_frame_json)
+        skeleton_id = child_distinguish(frame_num, first_frame_json)
 
         frame_num += 1
 
     with open(first_frame_json, 'r') as f:
         json_obj = json.load(f)
+    f.close()
     head = json_obj[0]['person'][skeleton_id]['keypoint']['Head']
     neck = json_obj[0]['person'][skeleton_id]['keypoint']['Neck']
 
     # 성인의 bbox를 확인할 수 없음
     if head['accuracy'] < 0.7 or neck['accuracy'] < 0.7:
-        return -2, frame_num + 1, first_frame_json, skeleton_id
+        return -2, frame_num, first_frame_json, skeleton_id
 
     minimum = -1  # 가장 작은 차이값
     adult_id = -2  # 차이값이 가장 작은 사람의 id
@@ -86,7 +87,7 @@ def find_adult(csv_file, frame_num):
         idx += 1
         # bbox를 찾을 수 없음
         if idx >= len(rdr):
-            return -2, frame_num + 1, first_frame_json, skeleton_id
+            return -2, frame_num, first_frame_json, skeleton_id
     # frame_id가 동일한 line들을 list로 만듦
     tmp_list = []
     for line in rdr[idx:]:
@@ -123,48 +124,48 @@ def find_adult(csv_file, frame_num):
                 minimum = x_diff + y_diff
                 adult_id = line[1]
 
-    f.close()
+    # 찾은 성인이 이전에 skeleton으로 추적하던 성인과 동일한지 확인
+    skeleton_list = get_skeleton_list()
+    if len(skeleton_list) > 0:
+        distance, key_count = get_distance(json_obj, skeleton_id)
+        w, h = get_frame_size()
+        skipped_frame_num = (frame_num - 1) - skeleton_list[-1]['frame_id']  # 넘어간 프레임 개수
+        if key_count > 0 and distance / key_count < w * skipped_frame_num / 305:
+            print(distance / key_count, w * skipped_frame_num / 305)
+            set_prev_adult_point(get_current_adult_point())
+        else:
+            adult_id = -2
+    # skeleton_list가 비어있고, 처음부터 bbox로 탐지를 시작했으면
+    # prev_adult_point가 비어있으므로 current_adult_point로 set해줌
+    else:
+        set_prev_adult_point(get_current_adult_point())
     return adult_id, frame_num, first_frame_json, skeleton_id
 
 
-def tracking_by_skeleton(json_obj, skeleton_list, frame_num, skeleton_id):
+def tracking_by_skeleton(json_obj, frame_num, skeleton_id):
+    skeleton_list = get_skeleton_list()
     # skeleton_list가 비어있으면(첫 번째 프레임이어서 성인 탐지가 안되어 있으면)
     # 무조건 성인으로 탐지한 skeleton 값을 집어넣음
     if len(skeleton_list) == 0:
         set_prev_adult_point(get_current_adult_point())
 
         json_obj[0]['person'][skeleton_id]['person_id'] = 0
-        skeleton_list.append({"frame_id": frame_num - 1, "person": [json_obj[0]['person'][skeleton_id]]})
+        append_skeleton_list({"frame_id": frame_num - 1, "person": [json_obj[0]['person'][skeleton_id]]})
         crop([skeleton_list[-1]])
-        return skeleton_list
+        return
 
-    distance = 0
-    key_count = 0
-    adult_obj = get_prev_adult_point()
-    for key in body_point[:-1]:
-        if json_obj[0]['person'][skeleton_id]['keypoint'][key]['accuracy'] >= 0.7:
-            x = json_obj[0]['person'][skeleton_id]['keypoint'][key]['x']
-            y = json_obj[0]['person'][skeleton_id]['keypoint'][key]['y']
-
-            x2 = adult_obj[key]['x']
-            y2 = adult_obj[key]['y']
-            accuracy = adult_obj[key]['accuracy']
-
-            # 정확도가 높으면 움직인 거리 계산
-            if accuracy >= 0.7:
-                key_count += 1
-                distance += ((x - x2) ** 2 + (y - y2) ** 2) ** 0.5
+    distance, key_count = get_distance(json_obj, skeleton_id)
 
     w, h = get_frame_size()
     skipped_frame_num = (frame_num - 1) - skeleton_list[-1]['frame_id']   # 넘어간 프레임 개수
-    print(distance / key_count, w * skipped_frame_num / 310)
-    if key_count > 0 and distance / key_count < w * skipped_frame_num / 310:
+    if key_count > 0 and distance / key_count < w * skipped_frame_num / 305:
+        print(distance / key_count, w * skipped_frame_num / 305)
         set_prev_adult_point(get_current_adult_point())
 
         json_obj[0]['person'][skeleton_id]['person_id'] = 0
-        skeleton_list.append({"frame_id": frame_num - 1, "person": [json_obj[0]['person'][skeleton_id]]})
+        append_skeleton_list({"frame_id": frame_num - 1, "person": [json_obj[0]['person'][skeleton_id]]})
         crop([skeleton_list[-1]])
-    return skeleton_list
+    return
 
 
 def crop(skeleton_list):
@@ -188,7 +189,7 @@ def crop(skeleton_list):
 
 
 if __name__ == "__main__":
-    file_name = "w2"
+    file_name = "p1"
     set_video_name(file_name)
     path = f'../media/{get_video_name()}.mp4'
 
@@ -214,8 +215,6 @@ if __name__ == "__main__":
 
     csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
 
-    # 성인의 관절을 저장한 list
-    skeleton_list = []
     # 성인의 id와 현재 frame 번호
     adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, 0)
 
@@ -223,7 +222,7 @@ if __name__ == "__main__":
     if adult_id == -2:
         with open(adult_json, 'r') as f:
             json_obj = json.load(f)
-        skeleton_list = tracking_by_skeleton(json_obj, skeleton_list, frame_num, skeleton_id)
+        tracking_by_skeleton(json_obj, frame_num, skeleton_id)
 
     f = open(csv_file, 'r', encoding='utf-8')
     rdr = csv.reader(f)
@@ -256,7 +255,7 @@ if __name__ == "__main__":
             if adult_id == -2:
                 with open(adult_json, 'r') as f:
                     json_obj = json.load(f)
-                skeleton_list = tracking_by_skeleton(json_obj, skeleton_list, frame_num, skeleton_id)
+                tracking_by_skeleton(json_obj, frame_num, skeleton_id)
             continue
 
         image = cv2.imread(f"../output/video/{get_video_name()}/frames/{frame_num}.png")
@@ -265,7 +264,7 @@ if __name__ == "__main__":
         for item in tmp_list:
             if item[1] == adult_id:
                 # 추적 대상 tracking하며 관절 추출
-                skeleton_list.extend(get_skeleton(item[2:6], image, frame_num))
+                extend_skeleton_list(get_skeleton(item[2:6], image, frame_num))
 
                 not_detected = False
 
@@ -279,7 +278,7 @@ if __name__ == "__main__":
             if adult_id == -2:
                 with open(adult_json, 'r') as f:
                     json_obj = json.load(f)
-                skeleton_list = tracking_by_skeleton(json_obj, skeleton_list, frame_num, skeleton_id)
+                tracking_by_skeleton(json_obj, frame_num, skeleton_id)
             continue
 
         frame_num += 1
@@ -287,7 +286,7 @@ if __name__ == "__main__":
     # json파일로 저장
     skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
     with open(skeleton_json_file, 'w', encoding="utf-8") as make_file:
-        json.dump(skeleton_list, make_file, ensure_ascii=False, indent="\t")
+        json.dump(get_skeleton_list(), make_file, ensure_ascii=False, indent="\t")
 
     # 관절들의 변화량을 list로 저장
     angle_arm = []; incli_arm = []

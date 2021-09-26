@@ -285,4 +285,22 @@ def plotting_points():
     plt.show()
 
 
-# plotting_points()
+def get_distance(json_obj, skeleton_id):
+    distance = 0
+    key_count = 0
+    adult_obj = get_prev_adult_point()
+    for key in body_point[:-1]:
+        if json_obj[0]['person'][skeleton_id]['keypoint'][key]['accuracy'] >= 0.7:
+            x = json_obj[0]['person'][skeleton_id]['keypoint'][key]['x']
+            y = json_obj[0]['person'][skeleton_id]['keypoint'][key]['y']
+
+            x2 = adult_obj[key]['x']
+            y2 = adult_obj[key]['y']
+            accuracy = adult_obj[key]['accuracy']
+
+            # 정확도가 높으면 움직인 거리 계산
+            if accuracy >= 0.7:
+                key_count += 1
+                distance += ((x - x2) ** 2 + (y - y2) ** 2) ** 0.5
+    return distance, key_count
+

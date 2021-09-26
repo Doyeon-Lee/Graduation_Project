@@ -30,10 +30,18 @@ VIDEO_NAME = ""
 RATIO_SUM = 0
 PEOPLE = 0
 
+# 성인의 관절 좌표값
+CURRENT_POINT_OF_ADULT = {}
+PREV_POINT_OF_ADULT = {}
+
+# 성인의 관절 리스트
+SKELETON_LIST = []
+
 
 def initPoint():
+    global CURRENT_POINT_OF_ADULT, PREV_POINT_OF_ADULT
     for key in body_point:
-        CURRENT_POINT_OF_ADULT[key] = {"x": 0, "y": 0, "accuracy": 0} # 성인의 관절 좌표값
+        CURRENT_POINT_OF_ADULT[key] = {"x": 0, "y": 0, "accuracy": 0}
         PREV_POINT_OF_ADULT[key] = {"x": 0, "y": 0, "accuracy": 0}
 
 
@@ -93,3 +101,17 @@ def get_prev_adult_point():
 
 def swap(x, y):
     return y, x
+
+
+def append_skeleton_list(value):
+    global SKELETON_LIST
+    SKELETON_LIST.append(value)
+
+
+def extend_skeleton_list(value):
+    global SKELETON_LIST
+    SKELETON_LIST.extend(value)
+
+
+def get_skeleton_list():
+    return SKELETON_LIST
