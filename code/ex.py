@@ -1,3 +1,10 @@
-import numpy as np
+import datetime
+import time
 
-print(np.std([0.45038, 0.44316485394087585]))
+x = 1730
+hour = x // 25 // 60 // 60
+minute = x // 25 // 60 % 60
+second = x // 25 % 60
+print(str(datetime.datetime.strptime(f'{hour}:{minute}:{second}', '%H:%M:%S').time()))
+print(time.strftime('%H:%M:%S', time.gmtime(x // 25)))
+

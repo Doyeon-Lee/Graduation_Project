@@ -240,9 +240,10 @@ def get_variance(json_filename, point_number):
             num_pass = 0
 
     # n개의 frame을 단위로 그 값을 평균을 낸다 => 1초가 몇 frame인지 고려하면 좋을 듯
-    avg_angle = get_avg(angle_list)
-    avg_incl = get_avg(incl_list)
-    return avg_angle, avg_incl
+    # avg_angle = get_avg(angle_list)
+    # avg_incl = get_avg(incl_list)
+    # return avg_angle, avg_incl
+    return angle_list, incl_list
 
 
 def plotting_points():

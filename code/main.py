@@ -2,17 +2,14 @@ import csv
 import os
 import cv2
 import json
-import numpy as np
-import matplotlib.pyplot as plt
 from numba import cuda
-from sklearn.cluster import KMeans
-from sklearn import preprocessing
 
 from global_data import *
 from child_distinguish import child_distinguish
 from tracking import tracking
 from skeleton import detect_skeleton
-from plotting import get_variance, get_distance
+from plotting import get_distance
+from clustering import clustering
 
 
 # 전체 프레임에서 bbox만큼 잘라 관절 추출(각도, 기울기는 상대적인 값이기 때문)
@@ -192,7 +189,7 @@ def crop(skeleton_list):
 
 
 if __name__ == "__main__":
-    file_name = "p1"
+    file_name = "218"
     set_video_name(file_name)
     path = f'../media/{get_video_name()}.mp4'
 
@@ -292,33 +289,8 @@ if __name__ == "__main__":
     #     json.dump(get_skeleton_list(), make_file, ensure_ascii=False, indent="\t")
 
     skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
-
-    # 관절들의 변화량을 list로 저장
-    angle_arm = []; incli_arm = []
-    angle_leg = []; incli_leg = []
-    for i in range(4):
-        angle, incli = get_variance(skeleton_json_file, i)
-        if i is 0 or i is 1:
-            angle_arm.extend(angle)
-            incli_arm.extend(incli)
-        elif i is 2 or i is 3:
-            angle_leg.extend(angle)
-            incli_leg.extend(incli)
-
-    # plotting
-    # plt.scatter(incli_leg, angle_leg, label="leg")
-    # plt.scatter(incli_arm, angle_arm, c='red', label="arm")
-    # plt.xlabel('inclination variance')
-    # plt.ylabel('angle variance')
-    # plt.legend()
-    # plt.show()
-
-    kmeans = KMeans(n_clusters=2)
-    incli_arm = np.array(incli_arm).reshape(len(incli_arm), -1)
-    angle_arm = np.array(angle_arm).reshape(len(angle_arm), -1)
-    X = np.concatenate((incli_arm, angle_arm), axis=1)
-    ids = kmeans.fit_predict(X)
-    plt.xlabel('inclination variance')
-    plt.ylabel('angle variance')
-    plt.scatter(incli_arm, angle_arm, c=ids)
-    plt.show()
+    time_list = clustering(skeleton_json_file)
+    with open(f'../output/time_results/time_results_{get_video_name()}.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        for i in range(len(time_list)):
+            writer.writerow(["=\"" + time_list[i] + "\""])
