@@ -168,7 +168,7 @@ def get_variance(json_filename, point_number):
         angle_list = []
         incl_list = []
 
-        num_pass = 1 # 해당 관절에서 넘어간 프레임의 수(3개 점중 하나라도 0이거나 신뢰도가 낮으면)
+        num_pass = 0 # 해당 관절에서 넘어간 프레임의 수(3개 점중 하나라도 0이거나 신뢰도가 낮으면)
         pre_list = [0.0, [0, 0]] # 해당 관절에 대한 직전 각도와 (수학적)벡터값 저장
         specific = json_data[0]['person'][0]['keypoint']  # 우리가 원하는 특정한 객체 specific!
         specific_bt = get_point_list(specific)
@@ -209,23 +209,35 @@ def get_variance(json_filename, point_number):
 
             # 세 점 사이의 각도를 구하여 직전 각도의 차이를 기록한다
             cur_angle = angle_three_points(p1, p2, p3)
-            sub_angle = abs(pre_list[0] - cur_angle) / num_pass
-            if i > 0: angle_list.append(sub_angle)
-            pre_list[0] = cur_angle
-
             # 두 점을 잇는 벡터와 직전 벡터와의 각도를 구한 후, 기록한다
             cur_vec = make_vector(p1, p3)
-            pre_vec = pre_list[1]
-            sub_incl_angle = get_incl_angle(cur_vec, pre_vec) / num_pass
 
-            if i > 0:
-                if math.isnan(sub_incl_angle): incl_list.append(float(0))
-                else: incl_list.append(sub_incl_angle)
+            if pre_list != [0.0, [0, 0]]:
+                if num_pass > 0:
+                    # 맨 앞과 맨 뒤를 더해줌
+                    num_pass += 2
+                    # 넘어간 프레임을 채워줌
+                    missing_angle_list = np.linspace(pre_list[0], cur_angle, num_pass)
+                    missing_incl_list = np.linspace(pre_list[1], cur_vec, num_pass)
+                    j = 1
+                    while j < num_pass:
+                        sub_angle = abs(missing_angle_list[j] - missing_angle_list[j - 1])
+                        angle_list.append(sub_angle)
 
+                        sub_incl_angle = get_incl_angle(missing_incl_list[j], missing_incl_list[j - 1])
+                        incl_list.append(sub_incl_angle)
+                        j += 1
+                else:
+                    sub_angle = abs(pre_list[0] - cur_angle)
+                    angle_list.append(sub_angle)
+
+                    sub_incl_angle = get_incl_angle(cur_vec, pre_list[1])
+                    incl_list.append(sub_incl_angle)
+            pre_list[0] = cur_angle
             pre_list[1] = cur_vec
 
             # 여기까지 왔으면 frame 안넘어갔겠다
-            num_pass = 1
+            num_pass = 0
 
     # n개의 frame을 단위로 그 값을 평균을 낸다 => 1초가 몇 frame인지 고려하면 좋을 듯
     avg_angle = get_avg(angle_list)

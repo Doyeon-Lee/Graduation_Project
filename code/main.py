@@ -2,8 +2,11 @@ import csv
 import os
 import cv2
 import json
+import numpy as np
 import matplotlib.pyplot as plt
 from numba import cuda
+from sklearn.cluster import KMeans
+from sklearn import preprocessing
 
 from global_data import *
 from child_distinguish import child_distinguish
@@ -213,80 +216,82 @@ if __name__ == "__main__":
     # # GPU memory 초기화
     # cuda.close()
 
-    csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
+    # csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
+    #
+    # # 성인의 id와 현재 frame 번호
+    # adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, 0)
+    #
+    # # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
+    # if adult_id == -2:
+    #     with open(adult_json, 'r') as f:
+    #         json_obj = json.load(f)
+    #     tracking_by_skeleton(json_obj, frame_num, skeleton_id)
+    #
+    # f = open(csv_file, 'r', encoding='utf-8')
+    # rdr = csv.reader(f)
+    # rdr = list(rdr)
+    #
+    # idx = 0  # 현재 프레임의 첫번째줄
+    # rdr_size = len(rdr)
+    # total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
+    # while frame_num < total_frame:
+    #     # frame 찾음
+    #     while idx < len(rdr) and int(rdr[idx][0]) < frame_num + 1:
+    #         idx += 1
+    #
+    #     # frame_id가 동일한 line들을 list로 만듦
+    #     tmp_list = []
+    #     for line in rdr[idx:]:
+    #         if int(line[0]) == frame_num + 1:
+    #             tmp_list.append(line)
+    #             idx += 1
+    #         else:  # 다음 프레임으로 넘어가버렸다!
+    #             break
+    #
+    #     # 검출된 bbox가 없는 경우
+    #     if len(tmp_list) == 0:
+    #         # 성인의 id를 새로 찾기 위해 -1로 초기화
+    #         adult_id = -1
+    #         adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+    #
+    #         # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
+    #         if adult_id == -2:
+    #             with open(adult_json, 'r') as f:
+    #                 json_obj = json.load(f)
+    #             tracking_by_skeleton(json_obj, frame_num, skeleton_id)
+    #         continue
+    #
+    #     image = cv2.imread(f"../output/video/{get_video_name()}/frames/{frame_num}.png")
+    #
+    #     not_detected = True
+    #     for item in tmp_list:
+    #         if item[1] == adult_id:
+    #             # 추적 대상 tracking하며 관절 추출
+    #             extend_skeleton_list(get_skeleton(item[2:6], image, frame_num))
+    #
+    #             not_detected = False
+    #
+    #     # 현재 frame_num에서 성인이 발견되지 않았다면 성인 재탐지
+    #     if not_detected:
+    #         # 성인의 id를 새로 찾기 위해 -1로 초기화
+    #         adult_id = -1
+    #         adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+    #
+    #         # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
+    #         if adult_id == -2:
+    #             with open(adult_json, 'r') as f:
+    #                 json_obj = json.load(f)
+    #             tracking_by_skeleton(json_obj, frame_num, skeleton_id)
+    #         continue
+    #
+    #     frame_num += 1
+    #
+    # # json파일로 저장
+    # skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
+    # with open(skeleton_json_file, 'w', encoding="utf-8") as make_file:
+    #     json.dump(get_skeleton_list(), make_file, ensure_ascii=False, indent="\t")
 
-    # 성인의 id와 현재 frame 번호
-    adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, 0)
-
-    # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
-    if adult_id == -2:
-        with open(adult_json, 'r') as f:
-            json_obj = json.load(f)
-        tracking_by_skeleton(json_obj, frame_num, skeleton_id)
-
-    f = open(csv_file, 'r', encoding='utf-8')
-    rdr = csv.reader(f)
-    rdr = list(rdr)
-
-    idx = 0  # 현재 프레임의 첫번째줄
-    rdr_size = len(rdr)
-    total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
-    while frame_num < total_frame:
-        # frame 찾음
-        while idx < len(rdr) and int(rdr[idx][0]) < frame_num + 1:
-            idx += 1
-
-        # frame_id가 동일한 line들을 list로 만듦
-        tmp_list = []
-        for line in rdr[idx:]:
-            if int(line[0]) == frame_num + 1:
-                tmp_list.append(line)
-                idx += 1
-            else:  # 다음 프레임으로 넘어가버렸다!
-                break
-
-        # 검출된 bbox가 없는 경우
-        if len(tmp_list) == 0:
-            # 성인의 id를 새로 찾기 위해 -1로 초기화
-            adult_id = -1
-            adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
-
-            # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
-            if adult_id == -2:
-                with open(adult_json, 'r') as f:
-                    json_obj = json.load(f)
-                tracking_by_skeleton(json_obj, frame_num, skeleton_id)
-            continue
-
-        image = cv2.imread(f"../output/video/{get_video_name()}/frames/{frame_num}.png")
-
-        not_detected = True
-        for item in tmp_list:
-            if item[1] == adult_id:
-                # 추적 대상 tracking하며 관절 추출
-                extend_skeleton_list(get_skeleton(item[2:6], image, frame_num))
-
-                not_detected = False
-
-        # 현재 frame_num에서 성인이 발견되지 않았다면 성인 재탐지
-        if not_detected:
-            # 성인의 id를 새로 찾기 위해 -1로 초기화
-            adult_id = -1
-            adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
-
-            # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
-            if adult_id == -2:
-                with open(adult_json, 'r') as f:
-                    json_obj = json.load(f)
-                tracking_by_skeleton(json_obj, frame_num, skeleton_id)
-            continue
-
-        frame_num += 1
-
-    # json파일로 저장
     skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
-    with open(skeleton_json_file, 'w', encoding="utf-8") as make_file:
-        json.dump(get_skeleton_list(), make_file, ensure_ascii=False, indent="\t")
 
     # 관절들의 변화량을 list로 저장
     angle_arm = []; incli_arm = []
@@ -301,9 +306,19 @@ if __name__ == "__main__":
             incli_leg.extend(incli)
 
     # plotting
-    plt.scatter(incli_leg, angle_leg, label="leg")
-    plt.scatter(incli_arm, angle_arm, c='red', label="arm")
+    # plt.scatter(incli_leg, angle_leg, label="leg")
+    # plt.scatter(incli_arm, angle_arm, c='red', label="arm")
+    # plt.xlabel('inclination variance')
+    # plt.ylabel('angle variance')
+    # plt.legend()
+    # plt.show()
+
+    kmeans = KMeans(n_clusters=2)
+    incli_arm = np.array(incli_arm).reshape(len(incli_arm), -1)
+    angle_arm = np.array(angle_arm).reshape(len(angle_arm), -1)
+    X = np.concatenate((incli_arm, angle_arm), axis=1)
+    ids = kmeans.fit_predict(X)
     plt.xlabel('inclination variance')
     plt.ylabel('angle variance')
-    plt.legend()
+    plt.scatter(incli_arm, angle_arm, c=ids)
     plt.show()
