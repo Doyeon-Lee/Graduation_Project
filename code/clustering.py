@@ -1,3 +1,4 @@
+import pickle
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,9 +32,9 @@ def cluster_xy(label, ids, incli_list, angle_list, len_arm):
 def clustering(skeleton_json_file):
     # 관절들의 변화량을 list로 저장
     # 0은 left, 1은 right
-    angle_arm = [[], []];
+    angle_arm = [[], []]
     incli_arm = [[], []]
-    angle_leg = [[], []];
+    angle_leg = [[], []]
     incli_leg = [[], []]
     for i in range(4):
         angle, incli = get_variance(skeleton_json_file, i)
@@ -61,25 +62,26 @@ def clustering(skeleton_json_file):
     incli_leg_right = np.array(incli_leg[1]).reshape(len(incli_leg[1]), -1)
     angle_leg_right = np.array(angle_leg[1]).reshape(len(angle_leg[1]), -1)
 
-    kmeans = KMeans(n_clusters=2)
+    with open("../model/first_model.pkl", "rb") as f:
+        kmeans = pickle.load(f)
     X1 = np.concatenate((incli_arm_left, angle_arm_left), axis=1)
     X2 = np.concatenate((incli_leg_left, angle_leg_left), axis=1)
     X_left = np.vstack((X1, X2))
-    ids_left = kmeans.fit_predict(X_left)
+    ids_left = kmeans.predict(X_left)
     center = kmeans.cluster_centers_
     label_left = 1 if center[0][0] < center[1][0] else 0
 
     X1 = np.concatenate((incli_arm_right, angle_arm_right), axis=1)
     X2 = np.concatenate((incli_leg_right, angle_leg_right), axis=1)
     X_right = np.vstack((X1, X2))
-    ids_right = kmeans.fit_predict(X_right)
+    ids_right = kmeans.predict(X_right)
     center = kmeans.cluster_centers_
     label_right = 1 if center[0][0] < center[1][0] else 0
 
     violence_index = []
-    violence_x = [[], []];
+    violence_x = [[], []]
     violence_y = [[], []]
-    non_violence_x = [[], []];
+    non_violence_x = [[], []]
     non_violence_y = [[], []]
     # x와 y 나누기
     incli = incli_arm[0].copy()

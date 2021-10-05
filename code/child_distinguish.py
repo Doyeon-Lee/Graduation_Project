@@ -65,8 +65,8 @@ def child_distinguish(frame_num, file_name="", data=None):
                 elif body_ratio < 0.4:
                     body_ratio *= 1.1
 
-            # 비율이 0.4보다 작으면 제대로 추출되지 않았다고 간주
-            if body_ratio >= 0.4:
+            # 비율이 0.41보다 작으면 제대로 추출되지 않았다고 간주
+            if body_ratio >= 0.41:
                 body_ratio_list = np.append(body_ratio_list, body_ratio)
                 if data == [{}]:
                     set_rate(body_ratio)
@@ -84,11 +84,19 @@ def child_distinguish(frame_num, file_name="", data=None):
     while 1 in body_ratio_list:
         body_ratio_list = np.delete(body_ratio_list, np.where(body_ratio_list == 1))
 
+    # 인원이 2명보다 많을 때, 성인으로 추정되는 사람들의 비율값들을 모은 리스트의 표준편차값과
+    # 전체 인원의 표준편차값 중 더 작은 값을 표준편차값으로 사용
     if len(body_ratio_list) > 1:
-        # 후보는 아니지만 후보 다음으로 비율이 작은 비율값
         body_ratio_list.sort()
-        second_ratio = body_ratio_list[1]
-        standard = min(np.std([candidate_ratio, second_ratio]), np.std(body_ratio_list))
+        list_for_slice = np.where(body_ratio_list >= 0.44)[0]
+        if len(list_for_slice) > 0:
+            num_for_slice = int(list_for_slice[0])
+            if num_for_slice > 0:
+                standard = min(np.std(body_ratio_list[:num_for_slice]), np.std(body_ratio_list))
+            else:
+                standard = np.std(body_ratio_list)
+        else:
+            standard = np.std(body_ratio_list)
     else:
         standard = 0
 
@@ -102,13 +110,12 @@ def child_distinguish(frame_num, file_name="", data=None):
 
     # 인식되는 사람이 한 명일 때 prev_adult_point와 비교하여 거리값이 비슷하면 key값 return
     skeleton_list = get_skeleton_list()
-    if len(body_ratio_list) == 1:
+    if standard == 0:
         if len(skeleton_list) > 0:
             distance, key_count = get_distance(json_data, candidate_key)
             w, h = get_frame_size()
-            skipped_frame_num = (frame_num - 1) - skeleton_list[-1]['frame_id']  # 넘어간 프레임 개수
+            skipped_frame_num = frame_num - skeleton_list[-1]['frame_id']  # 현재 프레임과의 차이
             if key_count > 0 and distance / key_count < w * skipped_frame_num / 305:
-                print(distance / key_count, w * skipped_frame_num / 305)
                 set_current_adult_point(json_data[0]['person'][candidate_key]['keypoint'])
                 set_prev_adult_point(get_current_adult_point())
                 return candidate_key
@@ -116,7 +123,7 @@ def child_distinguish(frame_num, file_name="", data=None):
                 return -1
         # 인식되는 사람이 한 명일 때 특정 범위 내의 비율을 가진 사람을 성인이라고 생각
         else:
-            if 0.4 <= candidate_ratio < 0.44:
+            if 0.41 <= candidate_ratio < 0.44:
                 set_current_adult_point(json_data[0]['person'][candidate_key]['keypoint'])
                 return candidate_key
             else:
