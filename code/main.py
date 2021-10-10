@@ -12,6 +12,8 @@ from skeleton import detect_skeleton
 from plotting import get_distance
 from clustering import clustering
 
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+
 
 # 전체 프레임에서 bbox만큼 잘라 관절 추출(각도, 기울기는 상대적인 값이기 때문)
 # 팔이 범위를 벗어날 수 있기 때문에 가로 2배
@@ -135,7 +137,6 @@ def find_adult(csv_file, frame_num):
         w, h = get_frame_size()
         skipped_frame_num = frame_num - skeleton_list[-1]['frame_id']  # 현재 프레임과의 차이
         max_range = ((get_prev_adult_head_len()**2 * 56) / (165 * h)) * skipped_frame_num
-        print(get_prev_adult_head_len(), skipped_frame_num)
         if key_count > 0 and distance / key_count < max_range:
             set_prev_adult_point(get_current_adult_point())
         else:
@@ -164,7 +165,6 @@ def tracking_by_skeleton(json_obj, frame_num, skeleton_id):
     w, h = get_frame_size()
     skipped_frame_num = frame_num - skeleton_list[-1]['frame_id']   # 현재 프레임과의 차이
     max_range = ((get_prev_adult_head_len()**2 * 56) / (165 * h)) * skipped_frame_num
-    print(get_prev_adult_head_len(), skipped_frame_num)
     if key_count > 0 and distance / key_count < max_range:
         set_prev_adult_point(get_current_adult_point())
 
@@ -315,14 +315,14 @@ if __name__ == "__main__":
     non_violence_list = os.listdir('../media/non-violence')
     non_violence_list = [re.sub('.mp4', '', i) for i in non_violence_list]
 
-    for i in violence_list:
-        path = f'../media/violence/{i}.mp4'
+    for i in non_violence_list:
+        path = f'../media/non-violence/{i}.mp4'
         main(i, path)
         # GPU memory 초기화
         cuda.close()
 
-    for i in non_violence_list:
-        path = f'../media/non-violence/{i}.mp4'
+    for i in violence_list:
+        path = f'../media/violence/{i}.mp4'
         main(i, path)
         # GPU memory 초기화
         cuda.close()
