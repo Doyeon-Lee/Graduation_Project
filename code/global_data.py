@@ -33,6 +33,8 @@ PEOPLE = 0
 # 성인의 관절 좌표값
 CURRENT_POINT_OF_ADULT = {}
 PREV_POINT_OF_ADULT = {}
+# 성인의 머리 길이
+PREV_ADULT_HEAD_LEN = 0
 
 # 성인의 관절 리스트
 SKELETON_LIST = []
@@ -91,8 +93,20 @@ def get_current_adult_point():
 
 
 def set_prev_adult_point(points_dict):
-    global PREV_POINT_OF_ADULT
+    global PREV_POINT_OF_ADULT, PREV_ADULT_HEAD_LEN
     PREV_POINT_OF_ADULT = points_dict
+
+    # 성인의 머리 길이를 계산하여 저장
+    Head = PREV_POINT_OF_ADULT["Head"]
+    if PREV_POINT_OF_ADULT["RShoulder"]['accuracy'] < 0.7:
+        Shoulder = PREV_POINT_OF_ADULT["LShoulder"]
+    elif PREV_POINT_OF_ADULT["LShoulder"]['accuracy'] < 0.7:
+        Shoulder = PREV_POINT_OF_ADULT["RShoulder"]
+    else:
+        # 어깨의 가운데 점을 사용
+        Shoulder = {'x': (PREV_POINT_OF_ADULT["RShoulder"]['x'] + PREV_POINT_OF_ADULT["LShoulder"]['x']) / 2, \
+                    'y': (PREV_POINT_OF_ADULT["RShoulder"]['y'] + PREV_POINT_OF_ADULT["LShoulder"]['y']) / 2}
+    PREV_ADULT_HEAD_LEN = ((Head['x'] - Shoulder['x']) ** 2 + (Head['y'] - Shoulder['y']) ** 2) ** 0.5
 
 
 def get_prev_adult_point():
@@ -115,3 +129,7 @@ def extend_skeleton_list(value):
 
 def get_skeleton_list():
     return SKELETON_LIST
+
+
+def get_prev_adult_head_len():
+    return PREV_ADULT_HEAD_LEN

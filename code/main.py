@@ -2,6 +2,7 @@ import csv
 import os
 import cv2
 import json
+import re
 from numba import cuda
 
 from global_data import *
@@ -133,7 +134,9 @@ def find_adult(csv_file, frame_num):
         distance, key_count = get_distance(json_obj, skeleton_id)
         w, h = get_frame_size()
         skipped_frame_num = frame_num - skeleton_list[-1]['frame_id']  # 현재 프레임과의 차이
-        if key_count > 0 and distance / key_count < w * skipped_frame_num / 305:
+        max_range = ((get_prev_adult_head_len()**2 * 56) / (165 * h)) * skipped_frame_num
+        print(get_prev_adult_head_len(), skipped_frame_num)
+        if key_count > 0 and distance / key_count < max_range:
             set_prev_adult_point(get_current_adult_point())
         else:
             adult_id = -2
@@ -160,7 +163,9 @@ def tracking_by_skeleton(json_obj, frame_num, skeleton_id):
 
     w, h = get_frame_size()
     skipped_frame_num = frame_num - skeleton_list[-1]['frame_id']   # 현재 프레임과의 차이
-    if key_count > 0 and distance / key_count < w * skipped_frame_num / 305:
+    max_range = ((get_prev_adult_head_len()**2 * 56) / (165 * h)) * skipped_frame_num
+    print(get_prev_adult_head_len(), skipped_frame_num)
+    if key_count > 0 and distance / key_count < max_range:
         set_prev_adult_point(get_current_adult_point())
 
         json_obj[0]['person'][skeleton_id]['person_id'] = 0
@@ -189,10 +194,8 @@ def crop(skeleton_list):
         i += 1
 
 
-if __name__ == "__main__":
-    file_name = "218"
+def main(file_name, path):
     set_video_name(file_name)
-    path = f'../media/{get_video_name()}.mp4'
 
     init_rate()
     initPoint()
@@ -200,21 +203,21 @@ if __name__ == "__main__":
     cap = cv2.VideoCapture(path)
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-    set_frame_size(int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    set_frame_size(int(width), int(height))
     cap.release()
     # cropped_image 폴더를 만들어둠
     if not os.path.exists(f"../output/video/{get_video_name()}/cropped_image"):
         os.makedirs(f"../output/video/{get_video_name()}/cropped_image")
 
-    # # MOT 돌리기
-    # csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
-    #                      '--input-video', path, '--input-video-name', get_video_name(), \
-    #                      '--output-root', f'../output/video/{get_video_name()}/final', '--conf_thres', '0.4'])
-    #
-    # # GPU memory 초기화
-    # cuda.close()
+    # MOT 돌리기
+    csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
+                         '--input-video', path, '--input-video-name', get_video_name(), \
+                         '--output-root', f'../output/video/{get_video_name()}/final', '--conf_thres', '0.4'])
 
-    csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
+    # GPU memory 초기화
+    cuda.close()
+
+    # csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
 
     adult_id = -2
     frame_num = 0
@@ -240,7 +243,7 @@ if __name__ == "__main__":
     total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
     while frame_num < total_frame:
         # frame 찾음
-        while idx < len(rdr) and int(rdr[idx][0]) < frame_num + 1:
+        while idx < rdr_size and int(rdr[idx][0]) < frame_num + 1:
             idx += 1
 
         # frame_id가 동일한 line들을 list로 만듦
@@ -303,3 +306,23 @@ if __name__ == "__main__":
     #     writer = csv.writer(f)
     #     for i in range(len(time_list)):
     #         writer.writerow(["=\"" + time_list[i] + "\""])
+
+
+if __name__ == "__main__":
+    violence_list = os.listdir('../media/violence')
+    violence_list = [re.sub('.mp4', '', i) for i in violence_list]
+
+    non_violence_list = os.listdir('../media/non-violence')
+    non_violence_list = [re.sub('.mp4', '', i) for i in non_violence_list]
+
+    for i in violence_list:
+        path = f'../media/violence/{i}.mp4'
+        main(i, path)
+        # GPU memory 초기화
+        cuda.close()
+
+    for i in non_violence_list:
+        path = f'../media/non-violence/{i}.mp4'
+        main(i, path)
+        # GPU memory 초기화
+        cuda.close()

@@ -49,8 +49,9 @@ def clustering(kmeans, skeleton_json_file):
     kmeans.fit(X_right)
 
 
-file_list = ["218", "p1"]
-kmeans = KMeans(n_clusters=2)
+file_list = ["201", "218", "p1", "t1"]
+with open("../model/sv_model.pkl", "rb") as f:
+    kmeans = pickle.load(f)
 
 for i in file_list:
     skeleton_json_file = f'../output/video/{i}/results{i}.json'

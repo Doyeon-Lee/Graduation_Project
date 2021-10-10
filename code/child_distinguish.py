@@ -115,7 +115,9 @@ def child_distinguish(frame_num, file_name="", data=None):
             distance, key_count = get_distance(json_data, candidate_key)
             w, h = get_frame_size()
             skipped_frame_num = frame_num - skeleton_list[-1]['frame_id']  # 현재 프레임과의 차이
-            if key_count > 0 and distance / key_count < w * skipped_frame_num / 305:
+            max_range = ((get_prev_adult_head_len()**2 * 56) / (165 * h)) * skipped_frame_num
+            print(get_prev_adult_head_len(), skipped_frame_num)
+            if key_count > 0 and distance / key_count < max_range:
                 set_current_adult_point(json_data[0]['person'][candidate_key]['keypoint'])
                 set_prev_adult_point(get_current_adult_point())
                 return candidate_key
