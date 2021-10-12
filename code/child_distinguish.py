@@ -84,6 +84,9 @@ def child_distinguish(frame_num, file_name="", data=None):
     while 1 in body_ratio_list:
         body_ratio_list = np.delete(body_ratio_list, np.where(body_ratio_list == 1))
 
+    if len(body_ratio_list) == 0:
+        return -1
+
     # 인원이 2명보다 많을 때, 성인으로 추정되는 사람들의 비율값들을 모은 리스트의 표준편차값과
     # 전체 인원의 표준편차값 중 더 작은 값을 표준편차값으로 사용
     if len(body_ratio_list) > 1:

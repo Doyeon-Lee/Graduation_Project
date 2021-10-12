@@ -2,7 +2,7 @@ import csv
 import os
 import cv2
 import json
-import re
+import sys
 from numba import cuda
 
 from global_data import *
@@ -11,8 +11,6 @@ from tracking import tracking
 from skeleton import detect_skeleton
 from plotting import get_distance
 from clustering import clustering
-
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 
 
 # 전체 프레임에서 bbox만큼 잘라 관절 추출(각도, 기울기는 상대적인 값이기 때문)
@@ -59,9 +57,9 @@ def find_adult(csv_file, frame_num):
     skeleton_id = -1
     total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
     while skeleton_id == -1:
-        # 프레임 수가 넘어가면 break
+        # 프레임 수가 넘어가면 return
         if total_frame <= frame_num:
-            break
+            return -1, total_frame, None, -1
 
         # 첫 번째 프레임
         first_frame_image = f'../output/video/{get_video_name()}/frames/{frame_num}.png'
@@ -225,14 +223,18 @@ def main(file_name, path):
         # 성인의 id와 현재 frame 번호
         adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
 
+        # frame_num이 total_frame을 넘었음(영상이 끝남)
+        if adult_id == -1:
+            break
         # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
         if adult_id == -2:
             with open(adult_json, 'r') as f:
                 json_obj = json.load(f)
             tracking_by_skeleton(json_obj, frame_num, skeleton_id)
             frame_num += 1
-    # while문을 빠져나왔다면 -2가 아닌 0 또는 양의 정수일 것임
-    saved_adult_id = adult_id
+    # 0 또는 양의 정수일 때
+    if adult_id >= 0:
+        saved_adult_id = adult_id
 
     f = open(csv_file, 'r', encoding='utf-8')
     rdr = csv.reader(f)
@@ -259,6 +261,9 @@ def main(file_name, path):
         if len(tmp_list) == 0:
             adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
 
+            # frame_num이 total_frame을 넘었음(영상이 끝남)
+            if adult_id == -1:
+                break
             # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
             if adult_id == -2:
                 with open(adult_json, 'r') as f:
@@ -283,6 +288,9 @@ def main(file_name, path):
         if not_detected:
             adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
 
+            # frame_num이 total_frame을 넘었음(영상이 끝남)
+            if adult_id == -1:
+                break
             # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
             if adult_id == -2:
                 with open(adult_json, 'r') as f:
@@ -309,20 +317,8 @@ def main(file_name, path):
 
 
 if __name__ == "__main__":
-    violence_list = os.listdir('../media/violence')
-    violence_list = [re.sub('.mp4', '', i) for i in violence_list]
-
-    non_violence_list = os.listdir('../media/non-violence')
-    non_violence_list = [re.sub('.mp4', '', i) for i in non_violence_list]
-
-    for i in non_violence_list:
-        path = f'../media/non-violence/{i}.mp4'
-        main(i, path)
-        # GPU memory 초기화
-        cuda.close()
-
-    for i in violence_list:
-        path = f'../media/violence/{i}.mp4'
-        main(i, path)
-        # GPU memory 초기화
-        cuda.close()
+    if sys.argv[2] == "n":
+        path = f'../media/non-violence/{sys.argv[1]}.mp4'
+    else:
+        path = f'../media/violence/{sys.argv[1]}.mp4'
+    main.remote(sys.argv[1], path)
