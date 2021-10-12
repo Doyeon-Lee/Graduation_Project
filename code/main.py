@@ -94,7 +94,8 @@ def find_adult(csv_file, frame_num):
             return -2, frame_num, first_frame_json, skeleton_id
     # frame_id가 동일한 line들을 list로 만듦
     tmp_list = []
-    for line in rdr[idx:]:
+    rdr_list = rdr[idx:]
+    for line in rdr_list:
         if int(line[0]) == frame_num + 1:
             tmp_list.append(line)
             idx += 1
@@ -114,7 +115,7 @@ def find_adult(csv_file, frame_num):
 
         # x좌표와 y좌표의 차이
         x_diff = abs(head["x"] - x)
-        y_diff = head["y"] - y
+        y_diff = head["y"] + 1 - y  # 1은 bumper
 
         # 머리가 bbox보다 위에 있으면 continue
         if y_diff < 0:
@@ -207,15 +208,15 @@ def main(file_name, path):
     if not os.path.exists(f"../output/video/{get_video_name()}/cropped_image"):
         os.makedirs(f"../output/video/{get_video_name()}/cropped_image")
 
-    # MOT 돌리기
-    csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
-                         '--input-video', path, '--input-video-name', get_video_name(), \
-                         '--output-root', f'../output/video/{get_video_name()}/final', '--conf_thres', '0.4'])
+    # # MOT 돌리기
+    # csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
+    #                      '--input-video', path, '--input-video-name', get_video_name(), \
+    #                      '--output-root', f'../output/video/{get_video_name()}/final', '--conf_thres', '0.4'])
+    #
+    # # GPU memory 초기화
+    # cuda.close()
 
-    # GPU memory 초기화
-    cuda.close()
-
-    # csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
+    csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
 
     adult_id = -2
     frame_num = 0
@@ -241,6 +242,7 @@ def main(file_name, path):
     rdr = list(rdr)
 
     idx = 0  # 현재 프레임의 첫번째줄
+    is_frame_num_passed = True  # 프레임이 넘어갔는지 여부
     rdr_size = len(rdr)
     total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
     while frame_num < total_frame:
@@ -249,17 +251,25 @@ def main(file_name, path):
             idx += 1
 
         # frame_id가 동일한 line들을 list로 만듦
-        tmp_list = []
-        for line in rdr[idx:]:
-            if int(line[0]) == frame_num + 1:
-                tmp_list.append(line)
-                idx += 1
-            else:  # 다음 프레임으로 넘어가버렸다!
-                break
+        if is_frame_num_passed:
+            tmp_list = []
+            rdr_list = rdr[idx:]
+            for line in rdr_list:
+                if int(line[0]) == frame_num + 1:
+                    tmp_list.append(line)
+                    idx += 1
+                else:  # 다음 프레임으로 넘어가버렸다!
+                    break
 
         # 검출된 bbox가 없는 경우
         if len(tmp_list) == 0:
+            before_frame_num = frame_num
             adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+            # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
+            if before_frame_num == frame_num:
+                is_frame_num_passed = False
+            else:
+                is_frame_num_passed = True
 
             # frame_num이 total_frame을 넘었음(영상이 끝남)
             if adult_id == -1:
@@ -270,6 +280,7 @@ def main(file_name, path):
                     json_obj = json.load(f)
                 tracking_by_skeleton(json_obj, frame_num, skeleton_id)
                 frame_num += 1
+                is_frame_num_passed = True
             elif adult_id >= 0:
                 saved_adult_id = adult_id
             continue
@@ -286,7 +297,13 @@ def main(file_name, path):
 
         # 현재 frame_num에서 성인이 발견되지 않았다면 성인 재탐지
         if not_detected:
+            before_frame_num = frame_num
             adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+            # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
+            if before_frame_num == frame_num:
+                is_frame_num_passed = False
+            else:
+                is_frame_num_passed = True
 
             # frame_num이 total_frame을 넘었음(영상이 끝남)
             if adult_id == -1:
@@ -297,11 +314,13 @@ def main(file_name, path):
                     json_obj = json.load(f)
                 tracking_by_skeleton(json_obj, frame_num, skeleton_id)
                 frame_num += 1
+                is_frame_num_passed = True
             elif adult_id >= 0:
                 saved_adult_id = adult_id
             continue
 
         frame_num += 1
+        is_frame_num_passed = True
 
     # json파일로 저장
     skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
@@ -321,4 +340,4 @@ if __name__ == "__main__":
         path = f'../media/non-violence/{sys.argv[1]}.mp4'
     else:
         path = f'../media/violence/{sys.argv[1]}.mp4'
-    main.remote(sys.argv[1], path)
+    main(sys.argv[1], path)
