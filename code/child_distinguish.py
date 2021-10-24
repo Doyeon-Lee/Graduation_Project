@@ -1,7 +1,34 @@
 import json
 import numpy as np
 from global_data import *
-from plotting import get_incl, get_distance
+
+
+# 기울기 구하기
+def get_incl(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+
+    return abs(y1-y2) / abs(x1-x2)
+
+
+def get_distance(json_obj, skeleton_id):
+    distance = 0
+    key_count = 0
+    adult_obj = get_prev_adult_point()
+    for key in body_point[:-1]:
+        if json_obj[0]['person'][skeleton_id]['keypoint'][key]['accuracy'] >= 0.7:
+            x = json_obj[0]['person'][skeleton_id]['keypoint'][key]['x']
+            y = json_obj[0]['person'][skeleton_id]['keypoint'][key]['y']
+
+            x2 = adult_obj[key]['x']
+            y2 = adult_obj[key]['y']
+            accuracy = adult_obj[key]['accuracy']
+
+            # 정확도가 높으면 움직인 거리 계산
+            if accuracy >= 0.7:
+                key_count += 1
+                distance += ((x - x2) ** 2 + (y - y2) ** 2) ** 0.5
+    return distance, key_count
 
 
 def child_distinguish(frame_num, file_name="", data=None):
@@ -108,8 +135,6 @@ def child_distinguish(frame_num, file_name="", data=None):
         average = 0
     else:
         average = ratio_sum / people
-
-    print(average, candidate_key, body_ratio_list)
 
     # 인식되는 사람이 한 명일 때 prev_adult_point와 비교하여 거리값이 비슷하면 key값 return
     skeleton_list = get_skeleton_list()

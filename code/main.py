@@ -215,124 +215,124 @@ def main(file_name, path):
     #
     # # GPU memory 초기화
     # cuda.close()
-
-    csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
-
-    adult_id = -2
-    frame_num = 0
-    while adult_id == -2:
-        # 성인의 id와 현재 frame 번호
-        adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
-
-        # frame_num이 total_frame을 넘었음(영상이 끝남)
-        if adult_id == -1:
-            break
-        # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
-        if adult_id == -2:
-            with open(adult_json, 'r') as f:
-                json_obj = json.load(f)
-            tracking_by_skeleton(json_obj, frame_num, skeleton_id)
-            frame_num += 1
-    # 0 또는 양의 정수일 때
-    if adult_id >= 0:
-        saved_adult_id = adult_id
-
-    f = open(csv_file, 'r', encoding='utf-8')
-    rdr = csv.reader(f)
-    rdr = list(rdr)
-
-    idx = 0  # 현재 프레임의 첫번째줄
-    is_frame_num_passed = True  # 프레임이 넘어갔는지 여부
-    rdr_size = len(rdr)
-    total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
-    while frame_num < total_frame:
-        # frame 찾음
-        while idx < rdr_size and int(rdr[idx][0]) < frame_num + 1:
-            idx += 1
-
-        # frame_id가 동일한 line들을 list로 만듦
-        if is_frame_num_passed:
-            tmp_list = []
-            rdr_list = rdr[idx:]
-            for line in rdr_list:
-                if int(line[0]) == frame_num + 1:
-                    tmp_list.append(line)
-                    idx += 1
-                else:  # 다음 프레임으로 넘어가버렸다!
-                    break
-
-        # 검출된 bbox가 없는 경우
-        if len(tmp_list) == 0:
-            before_frame_num = frame_num
-            adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
-            # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
-            if before_frame_num == frame_num:
-                is_frame_num_passed = False
-            else:
-                is_frame_num_passed = True
-
-            # frame_num이 total_frame을 넘었음(영상이 끝남)
-            if adult_id == -1:
-                break
-            # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
-            if adult_id == -2:
-                with open(adult_json, 'r') as f:
-                    json_obj = json.load(f)
-                tracking_by_skeleton(json_obj, frame_num, skeleton_id)
-                frame_num += 1
-                is_frame_num_passed = True
-            elif adult_id >= 0:
-                saved_adult_id = adult_id
-            continue
-
-        image = cv2.imread(f"../output/video/{get_video_name()}/frames/{frame_num}.png")
-
-        not_detected = True
-        for item in tmp_list:
-            if int(item[1]) == saved_adult_id:
-                # 추적 대상 tracking하며 관절 추출
-                extend_skeleton_list(get_skeleton(item[2:6], image, frame_num))
-
-                not_detected = False
-
-        # 현재 frame_num에서 성인이 발견되지 않았다면 성인 재탐지
-        if not_detected:
-            before_frame_num = frame_num
-            adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
-            # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
-            if before_frame_num == frame_num:
-                is_frame_num_passed = False
-            else:
-                is_frame_num_passed = True
-
-            # frame_num이 total_frame을 넘었음(영상이 끝남)
-            if adult_id == -1:
-                break
-            # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
-            if adult_id == -2:
-                with open(adult_json, 'r') as f:
-                    json_obj = json.load(f)
-                tracking_by_skeleton(json_obj, frame_num, skeleton_id)
-                frame_num += 1
-                is_frame_num_passed = True
-            elif adult_id >= 0:
-                saved_adult_id = adult_id
-            continue
-
-        frame_num += 1
-        is_frame_num_passed = True
-
-    # json파일로 저장
-    skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
-    with open(skeleton_json_file, 'w', encoding="utf-8") as make_file:
-        json.dump(get_skeleton_list(), make_file, ensure_ascii=False, indent="\t")
-
+    #
+    # # csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
+    #
+    # adult_id = -2
+    # frame_num = 0
+    # while adult_id == -2:
+    #     # 성인의 id와 현재 frame 번호
+    #     adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+    #
+    #     # frame_num이 total_frame을 넘었음(영상이 끝남)
+    #     if adult_id == -1:
+    #         break
+    #     # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
+    #     if adult_id == -2:
+    #         with open(adult_json, 'r') as f:
+    #             json_obj = json.load(f)
+    #         tracking_by_skeleton(json_obj, frame_num, skeleton_id)
+    #         frame_num += 1
+    # # 0 또는 양의 정수일 때
+    # if adult_id >= 0:
+    #     saved_adult_id = adult_id
+    #
+    # f = open(csv_file, 'r', encoding='utf-8')
+    # rdr = csv.reader(f)
+    # rdr = list(rdr)
+    #
+    # idx = 0  # 현재 프레임의 첫번째줄
+    # is_frame_num_passed = True  # 프레임이 넘어갔는지 여부
+    # rdr_size = len(rdr)
+    # total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
+    # while frame_num < total_frame:
+    #     # frame 찾음
+    #     while idx < rdr_size and int(rdr[idx][0]) < frame_num + 1:
+    #         idx += 1
+    #
+    #     # frame_id가 동일한 line들을 list로 만듦
+    #     if is_frame_num_passed:
+    #         tmp_list = []
+    #         rdr_list = rdr[idx:]
+    #         for line in rdr_list:
+    #             if int(line[0]) == frame_num + 1:
+    #                 tmp_list.append(line)
+    #                 idx += 1
+    #             else:  # 다음 프레임으로 넘어가버렸다!
+    #                 break
+    #
+    #     # 검출된 bbox가 없는 경우
+    #     if len(tmp_list) == 0:
+    #         before_frame_num = frame_num
+    #         adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+    #         # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
+    #         if before_frame_num == frame_num:
+    #             is_frame_num_passed = False
+    #         else:
+    #             is_frame_num_passed = True
+    #
+    #         # frame_num이 total_frame을 넘었음(영상이 끝남)
+    #         if adult_id == -1:
+    #             break
+    #         # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
+    #         if adult_id == -2:
+    #             with open(adult_json, 'r') as f:
+    #                 json_obj = json.load(f)
+    #             tracking_by_skeleton(json_obj, frame_num, skeleton_id)
+    #             frame_num += 1
+    #             is_frame_num_passed = True
+    #         elif adult_id >= 0:
+    #             saved_adult_id = adult_id
+    #         continue
+    #
+    #     image = cv2.imread(f"../output/video/{get_video_name()}/frames/{frame_num}.png")
+    #
+    #     not_detected = True
+    #     for item in tmp_list:
+    #         if int(item[1]) == saved_adult_id:
+    #             # 추적 대상 tracking하며 관절 추출
+    #             extend_skeleton_list(get_skeleton(item[2:6], image, frame_num))
+    #
+    #             not_detected = False
+    #
+    #     # 현재 frame_num에서 성인이 발견되지 않았다면 성인 재탐지
+    #     if not_detected:
+    #         before_frame_num = frame_num
+    #         adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+    #         # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
+    #         if before_frame_num == frame_num:
+    #             is_frame_num_passed = False
+    #         else:
+    #             is_frame_num_passed = True
+    #
+    #         # frame_num이 total_frame을 넘었음(영상이 끝남)
+    #         if adult_id == -1:
+    #             break
+    #         # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
+    #         if adult_id == -2:
+    #             with open(adult_json, 'r') as f:
+    #                 json_obj = json.load(f)
+    #             tracking_by_skeleton(json_obj, frame_num, skeleton_id)
+    #             frame_num += 1
+    #             is_frame_num_passed = True
+    #         elif adult_id >= 0:
+    #             saved_adult_id = adult_id
+    #         continue
+    #
+    #     frame_num += 1
+    #     is_frame_num_passed = True
+    #
+    # # json파일로 저장
     # skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
-    # time_list = clustering(skeleton_json_file)
-    # with open(f'../output/time_results/time_results_{get_video_name()}.csv', 'w', newline='') as f:
-    #     writer = csv.writer(f)
-    #     for i in range(len(time_list)):
-    #         writer.writerow(["=\"" + time_list[i] + "\""])
+    # with open(skeleton_json_file, 'w', encoding="utf-8") as make_file:
+    #     json.dump(get_skeleton_list(), make_file, ensure_ascii=False, indent="\t")
+
+    skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
+    time_list = clustering(skeleton_json_file)
+    with open(f'../output/time_results/time_results_{get_video_name()}.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        for i in range(len(time_list)):
+            writer.writerow(["=\"" + time_list[i] + "\""])
 
 
 if __name__ == "__main__":

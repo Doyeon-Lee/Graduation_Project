@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from rw_json import *
+from child_distinguish import child_distinguish
 
 
 # 세 점 사이의 각도 구하기
@@ -170,7 +171,8 @@ def get_variance(json_filename, point_number):
 
         num_pass = 0 # 해당 관절에서 넘어간 프레임의 수(3개 점중 하나라도 0이거나 신뢰도가 낮으면)
         pre_list = [0.0, [0, 0]] # 해당 관절에 대한 직전 각도와 (수학적)벡터값 저장
-        specific = json_data[0]['person'][0]['keypoint']  # 우리가 원하는 특정한 객체 specific!
+        adult_id = child_distinguish(0, "", json_data)
+        specific = json_data[0]['person'][adult_id]['keypoint']  # 우리가 원하는 특정한 객체 specific!
         specific_bt = get_point_list(specific)
 
         # 모든 프레임마다 반복하며
