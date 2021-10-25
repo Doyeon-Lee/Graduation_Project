@@ -75,7 +75,7 @@ def clustering(skeleton_json_file):
     if len(angle_leg[1]) > 0:
         angle_leg_right = np.array(angle_leg[1]).reshape(len(angle_leg[1]), -1)
 
-    with open("../model/sv_model_final.pkl", "rb") as f:
+    with open("../model/sv_model2.pkl", "rb") as f:
         kmeans = pickle.load(f)
     X1 = np.concatenate((incli_arm_left, angle_arm_left), axis=1)
     X2 = np.concatenate((incli_leg_left, angle_leg_left), axis=1)

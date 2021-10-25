@@ -37,12 +37,12 @@ def get_incl_angle(v1, v2):
     return angle / np.pi * 180
 
 
-# 한 사람의 모든 관절의 (x, y) 쌍을 리스트로 반환
+# 한 사람의 모든 관절의 (x, y, 정확도) 쌍을 리스트로 반환
 def get_point_list(person):
     tmp = []
     for i in range(15):
         bt = person[body_point[i]]
-        tmp.append((float(bt['x']), float(bt['y'])))
+        tmp.append((float(bt['x']), float(bt['y']), float(bt['accuracy'])))
     return np.asarray(tmp)
 
 
@@ -51,7 +51,7 @@ def person_distance(specific_bt, person_bt):
     dist = 0
     num_cnt = 0
     for i in range(15):
-        if 0 in specific_bt[i] or 0 in person_bt[i]:
+        if specific_bt[i][2] < 0.7 or person_bt[i][2] < 0.7:
             continue
 
         dist += abs(specific_bt[i][0] - person_bt[i][0])
@@ -169,7 +169,7 @@ def get_variance(json_filename, point_number):
         angle_list = []
         incl_list = []
 
-        num_pass = 0 # 해당 관절에서 넘어간 프레임의 수(3개 점중 하나라도 0이거나 신뢰도가 낮으면)
+        prev_frame_num = json_data[0]["frame_id"] # 마지막에 관절이 인식된 프레임 번호(3개 점중 하나라도 0이거나 신뢰도가 낮으면)
         pre_list = [0.0, [0, 0]] # 해당 관절에 대한 직전 각도와 (수학적)벡터값 저장
         adult_id = child_distinguish(0, "", json_data)
         specific = json_data[0]['person'][adult_id]['keypoint']  # 우리가 원하는 특정한 객체 specific!
@@ -190,10 +190,30 @@ def get_variance(json_filename, point_number):
                 dist_list.append(person_distance(specific_bt, person_bt))
 
             # 관절들의 거리의 합의 평균이 가장 적은게 같은 대상이라 판단
+            # 한 명만 인식됐을 경우, 그 객체가 맞는지 검사
             dist_list = np.array(dist_list)
             specific_id = dist_list.argmin()
-            specific = obj[specific_id]['keypoint']
-            specific_bt = get_point_list(specific)
+
+            head = specific["Head"]
+            if specific["RShoulder"]['accuracy'] < 0.7:
+                shoulder = specific["LShoulder"]
+            elif specific["LShoulder"]['accuracy'] < 0.7:
+                shoulder = specific["RShoulder"]
+            else:
+                # 어깨의 가운데 점을 사용
+                shoulder = {'x': (specific["RShoulder"]['x'] + specific["LShoulder"]['x']) / 2, \
+                            'y': (specific["RShoulder"]['y'] + specific["LShoulder"]['y']) / 2}
+            head_len = ((head['x'] - shoulder['x']) ** 2 + (head['y'] - shoulder['y']) ** 2) ** 0.5
+
+            w, h = get_frame_size()
+            skipped_frame_num = json_data[i]["frame_id"] - prev_frame_num   # 현재 프레임과의 차이
+
+            max_range = ((head_len**2 * 56) / (165 * h)) * skipped_frame_num
+            if dist_list[specific_id] < max_range:
+                specific = obj[specific_id]['keypoint']
+                specific_bt = get_point_list(specific)
+            else:
+                continue
 
             # 추적하고자 하는 객체의 관절 변화를 계산
             p1, p2, p3 = specific_point[point_number]
@@ -204,9 +224,7 @@ def get_variance(json_filename, point_number):
             p1 = (p1['x'], p1['y']); p2 = (p2['x'], p2['y']); p3 = (p3['x'], p3['y'])
 
             # 0이 있으면 해당 frame 건너 뛴다
-            if 0 in p1 or 0 in p2 or 0 in p3 or \
-                    acc1 < 0.3 or acc2 < 0.3 or acc3 < 0.3:
-                num_pass += 1
+            if acc1 < 0.3 or acc2 < 0.3 or acc3 < 0.3:
                 continue
 
             # 세 점 사이의 각도를 구하여 직전 각도의 차이를 기록한다
@@ -215,14 +233,14 @@ def get_variance(json_filename, point_number):
             cur_vec = make_vector(p1, p3)
 
             if pre_list != [0.0, [0, 0]]:
-                if num_pass > 0:
+                if skipped_frame_num > 0:
                     # 맨 앞과 맨 뒤를 더해줌
-                    num_pass += 2
+                    skipped_frame_num += 1
                     # 넘어간 프레임을 채워줌
-                    missing_angle_list = np.linspace(pre_list[0], cur_angle, num_pass)
-                    missing_incl_list = np.linspace(pre_list[1], cur_vec, num_pass)
+                    missing_angle_list = np.linspace(pre_list[0], cur_angle, skipped_frame_num)
+                    missing_incl_list = np.linspace(pre_list[1], cur_vec, skipped_frame_num)
                     j = 1
-                    while j < num_pass:
+                    while j < skipped_frame_num:
                         sub_angle = abs(missing_angle_list[j] - missing_angle_list[j - 1])
                         angle_list.append(sub_angle)
 
@@ -239,7 +257,7 @@ def get_variance(json_filename, point_number):
             pre_list[1] = cur_vec
 
             # 여기까지 왔으면 frame 안넘어갔겠다
-            num_pass = 0
+            prev_frame_num = json_data[i]["frame_id"]
 
     # n개의 frame을 단위로 그 값을 평균을 낸다 => 1초가 몇 frame인지 고려하면 좋을 듯
     # avg_angle = get_avg(angle_list)

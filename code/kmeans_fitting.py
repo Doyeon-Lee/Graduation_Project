@@ -1,11 +1,13 @@
 import os
 import re
+import cv2
 import pickle
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 
 from plotting import get_variance
+from global_data import set_frame_size
 
 
 def clustering(kmeans, skeleton_json_file):
@@ -100,26 +102,46 @@ def clustering(kmeans, skeleton_json_file):
     return kmeans
 
 
-# violence_list = os.listdir('../media/violence')
-# violence_list = [re.sub('.mp4', '', i) for i in violence_list]
+violence_list = os.listdir('../media/violence')
+violence_list = [re.sub('.mp4', '', i) for i in violence_list]
 
 # non_violence_list = os.listdir('../media/non-violence')
 # non_violence_list = [re.sub('.mp4', '', i) for i in non_violence_list]
 
-non_violence_list = ["f2", "601", "904", "1001", "119", "120", "220", "306", "305", "218", "114"]
+# violence_list = []
+# for i in range(1, 48):
+#     violence_list.append('m'+str(i))
 
-with open("../model/sv_model_violence.pkl", "rb") as f:
+with open("../model/sv_model_non_violence.pkl", "rb") as f:
     kmeans = pickle.load(f)
 
 # kmeans = KMeans(n_clusters=2)
 
-# for i in violence_list:
-#     skeleton_json_file = f'../output/video/{i}/results{i}.json'
-#     kmeans = clustering(kmeans, skeleton_json_file)
-
-for i in non_violence_list:
+for i in violence_list:
     skeleton_json_file = f'../output/video/{i}/results{i}.json'
+    path = f'../media/violence/{i}.mp4'
+
+    # frame_size 정해줌
+    cap = cv2.VideoCapture(path)
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    set_frame_size(int(width), int(height))
+    cap.release()
+
     kmeans = clustering(kmeans, skeleton_json_file)
 
-with open("../model/sv_model18.pkl", "wb") as f:
+# for i in non_violence_list:
+#     skeleton_json_file = f'../output/video/{i}/results{i}.json'
+#     path = f'../media/non-violence/{i}.mp4'
+#
+#     # frame_size 정해줌
+#     cap = cv2.VideoCapture(path)
+#     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+#     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+#     set_frame_size(int(width), int(height))
+#     cap.release()
+#
+#     kmeans = clustering(kmeans, skeleton_json_file)
+
+with open("../model/sv_model.pkl", "wb") as f:
     pickle.dump(kmeans, f)
