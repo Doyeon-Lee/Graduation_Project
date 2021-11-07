@@ -7,7 +7,7 @@ import re
 # non_violence_list = os.listdir('../media/non-violence')
 # non_violence_list = [re.sub('.mp4', '', i) for i in non_violence_list]
 
-os.system("python main.py 800 n")
+os.system("python main.py s1 v")
 
 # file_list = ["602", "902", "f2", "b29"]
 #

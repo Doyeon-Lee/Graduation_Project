@@ -111,20 +111,29 @@ def clustering(skeleton_json_file):
         plt.show()
 
     # 폭력 의심 시간을 list로 뽑아서 저장
+    # frame을 초로 변환 후 중복 제거
+    violence_index = [i // 25 for i in violence_index]
+    violence_index = list(set(violence_index))
+    violence_index.sort()
     time_list = []
+    recorded_sec = -2
     i = 0
     while i < len(violence_index):
-        hour = violence_index[i] // 25 // 60 // 60
-        minute = violence_index[i] // 25 // 60 % 60
-        second = violence_index[i] // 25 % 60
+        # 연속적으로 폭력이 의심되면 가장 앞쪽 시간만 기록
+        sec = violence_index[i]
+        if recorded_sec + 1 == sec:
+            recorded_sec = sec
+            i += 1
+            continue
+
+        hour = violence_index[i] // 60 // 60
+        minute = violence_index[i] // 60 % 60
+        second = violence_index[i] % 60
 
         t = str(datetime.datetime.strptime(f'{hour}:{minute}:{second}', '%H:%M:%S').time())
         # 같은 의심 시간이 list에 있으면 list에 추가하지 않음
         if t not in time_list:
             time_list.append(t)
-        # 연속적으로 폭력이 의심되면 가장 앞쪽 시간만 기록
-        while i < (len(violence_index) - 1) and violence_index[i + 1] == violence_index[i] + 1:
-            i += 1
+            recorded_sec = sec
         i += 1
-    time_list.sort()
     return time_list

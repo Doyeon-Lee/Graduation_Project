@@ -194,6 +194,11 @@ def get_variance(json_filename, point_number):
             dist_list = np.array(dist_list)
             specific_id = dist_list.argmin()
 
+            # 머리와 두 어깨의 인식률이 모두 안좋을 땐 continue
+            if specific["Head"]['accuracy'] < 0.3 and specific["RShoulder"]['accuracy'] < 0.3 and \
+                    specific["LShoulder"]['accuracy'] < 0.3:
+                continue
+
             head = specific["Head"]
             if specific["RShoulder"]['accuracy'] < 0.7:
                 shoulder = specific["LShoulder"]
