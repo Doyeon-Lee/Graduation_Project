@@ -12,92 +12,54 @@ from global_data import set_frame_size
 
 def clustering(kmeans, skeleton_json_file):
     # 관절들의 변화량을 list로 저장
-    # 0은 left, 1은 right
-    angle_arm = [[], []]
-    incli_arm = [[], []]
-    angle_leg = [[], []]
-    incli_leg = [[], []]
+    angle_arm = []
+    incli_arm = []
+    angle_leg = []
+    incli_leg = []
     for i in range(4):
         angle, incli = get_variance(skeleton_json_file, i)
-        if i is 0:
-            angle_arm[0].extend(angle)
-            incli_arm[0].extend(incli)
-        elif i is 1:
-            angle_arm[1].extend(angle)
-            incli_arm[1].extend(incli)
-        elif i is 2:
-            angle_leg[0].extend(angle)
-            incli_leg[0].extend(incli)
-        elif i is 3:
-            angle_leg[1].extend(angle)
-            incli_leg[1].extend(incli)
+        if i < 2:
+            angle_arm.extend(angle)
+            incli_arm.extend(incli)
+        else:
+            angle_leg.extend(angle)
+            incli_leg.extend(incli)
 
-    incli_arm_left = [[]]; angle_arm_left = [[]]
-    incli_leg_left = [[]]; angle_leg_left = [[]]
-    incli_arm_right = [[]]; angle_arm_right = [[]]
-    incli_leg_right = [[]]; angle_leg_right = [[]]
+    incli_arm_ = [[]]
+    incli_leg_ = [[]]
+    angle_arm_ = [[]]
+    angle_leg_ = [[]]
     # clustering
-    if len(incli_arm[0]) > 0:
-        incli_arm_left = np.array(incli_arm[0]).reshape(len(incli_arm[0]), -1)
-    if len(angle_arm[0]) > 0:
-        angle_arm_left = np.array(angle_arm[0]).reshape(len(angle_arm[0]), -1)
-    if len(incli_leg[0]) > 0:
-        incli_leg_left = np.array(incli_leg[0]).reshape(len(incli_leg[0]), -1)
-    if len(angle_leg[0]) > 0:
-        angle_leg_left = np.array(angle_leg[0]).reshape(len(angle_leg[0]), -1)
+    if len(incli_arm) > 0:
+        incli_arm_ = np.array(incli_arm).reshape(len(incli_arm), -1)
+    if len(angle_arm) > 0:
+        angle_arm_ = np.array(angle_arm).reshape(len(angle_arm), -1)
+    if len(incli_leg) > 0:
+        incli_leg_ = np.array(incli_leg).reshape(len(incli_leg), -1)
+    if len(angle_leg) > 0:
+        angle_leg_ = np.array(angle_leg).reshape(len(angle_leg), -1)
 
-    if len(incli_arm[1]) > 0:
-        incli_arm_right = np.array(incli_arm[1]).reshape(len(incli_arm[1]), -1)
-    if len(angle_arm[1]) > 0:
-        angle_arm_right = np.array(angle_arm[1]).reshape(len(angle_arm[1]), -1)
-    if len(incli_leg[1]) > 0:
-        incli_leg_right = np.array(incli_leg[1]).reshape(len(incli_leg[1]), -1)
-    if len(angle_leg[1]) > 0:
-        angle_leg_right = np.array(angle_leg[1]).reshape(len(angle_leg[1]), -1)
-
-    X1 = np.concatenate((incli_arm_left, angle_arm_left), axis=1)
-    X2 = np.concatenate((incli_leg_left, angle_leg_left), axis=1)
+    X1 = np.concatenate((incli_arm_, angle_arm_), axis=1)
+    X2 = np.concatenate((incli_leg_, angle_leg_), axis=1)
 
     # fitting
-    X_left = [[]]
+    X = [[]]
     if X2.shape[1] > 0:
         if X1.shape[1] > 0:
-            X_left = np.vstack((X1, X2))
+            X = np.vstack((X1, X2))
         else:
-            X_left = X2
+            X = X2
     else:
         if X1.shape[1] > 0:
-            X_left = X1
+            X = X1
 
     # nan 제거
-    X_left = pd.DataFrame(X_left)
-    X_left = X_left.dropna(how="any")
-    X_left = X_left.to_numpy()
+    X = pd.DataFrame(X)
+    X = X.dropna(how="any")
+    X = X.to_numpy()
 
-    if X_left.shape[1] > 0:
-        kmeans.fit(X_left)
-
-    X1 = np.concatenate((incli_arm_right, angle_arm_right), axis=1)
-    X2 = np.concatenate((incli_leg_right, angle_leg_right), axis=1)
-
-    # fitting
-    X_right = [[]]
-    if X2.shape[1] > 0:
-        if X1.shape[1] > 0:
-            X_right = np.vstack((X1, X2))
-        else:
-            X_right = X2
-    else:
-        if X1.shape[1] > 0:
-            X_right = X1
-
-    # nan 제거
-    X_right = pd.DataFrame(X_right)
-    X_right = X_right.dropna(how="any")
-    X_right = X_right.to_numpy()
-
-    if X_right.shape[1] > 0:
-        kmeans.fit(X_right)
+    if X.shape[1] > 0:
+        kmeans.fit(X)
 
     return kmeans
 
@@ -112,10 +74,10 @@ violence_list = [re.sub('.mp4', '', i) for i in violence_list]
 # for i in range(1, 48):
 #     violence_list.append('m'+str(i))
 
-with open("../model/sv_model_non_violence.pkl", "rb") as f:
-    kmeans = pickle.load(f)
+# with open("../model/sv_model_non_violence.pkl", "rb") as f:
+#     kmeans = pickle.load(f)
 
-# kmeans = KMeans(n_clusters=2)
+kmeans = KMeans(n_clusters=2)
 
 for i in violence_list:
     skeleton_json_file = f'../output/video/{i}/results{i}.json'
@@ -143,5 +105,5 @@ for i in violence_list:
 #
 #     kmeans = clustering(kmeans, skeleton_json_file)
 
-with open("../model/sv_model.pkl", "wb") as f:
+with open("../model/sv_model_v.pkl", "wb") as f:
     pickle.dump(kmeans, f)
