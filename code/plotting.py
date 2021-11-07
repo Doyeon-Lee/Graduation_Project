@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from rw_json import *
 from child_distinguish import child_distinguish
 
+accuracy_value = 0.7
+
 
 # 세 점 사이의 각도 구하기
 def angle_three_points(p1, p2, p3):
@@ -51,7 +53,7 @@ def person_distance(specific_bt, person_bt):
     dist = 0
     num_cnt = 0
     for i in range(15):
-        if specific_bt[i][2] < 0.7 or person_bt[i][2] < 0.7:
+        if specific_bt[i][2] < 0.5 or person_bt[i][2] < 0.5:
             continue
 
         dist += abs(specific_bt[i][0] - person_bt[i][0])
@@ -163,6 +165,7 @@ def make_preprocessed_json(json_filename, person_id):
 
 # person id는 plotting 결과를 얻고자 함수를 반복하기 위해 임의로 넣은 것
 def get_variance(json_filename, point_number):
+    global accuracy_value
     with open(json_filename) as f:
         json_data = json.load(f)
         json_len = len(json_data)
@@ -200,9 +203,9 @@ def get_variance(json_filename, point_number):
                 continue
 
             head = specific["Head"]
-            if specific["RShoulder"]['accuracy'] < 0.7:
+            if specific["RShoulder"]['accuracy'] < accuracy_value:
                 shoulder = specific["LShoulder"]
-            elif specific["LShoulder"]['accuracy'] < 0.7:
+            elif specific["LShoulder"]['accuracy'] < accuracy_value:
                 shoulder = specific["RShoulder"]
             else:
                 # 어깨의 가운데 점을 사용
