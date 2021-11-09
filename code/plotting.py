@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from rw_json import *
 from child_distinguish import child_distinguish
 
-accuracy_value = 0.7
+accuracy_value = 0.3
 
 
 # 세 점 사이의 각도 구하기
