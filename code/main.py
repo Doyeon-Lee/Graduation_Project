@@ -207,6 +207,9 @@ def main(file_name, path):
     # cropped_image 폴더를 만들어둠
     if not os.path.exists(f"../output/video/{get_video_name()}/cropped_image"):
         os.makedirs(f"../output/video/{get_video_name()}/cropped_image")
+    # 최종 결과물이 들어갈 폴더를 만들어줌
+    if not os.path.exists(f"../output/final_results"):
+        os.makedirs(f"../output/final_results")
 
     # # MOT 돌리기
     # csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
@@ -329,10 +332,15 @@ def main(file_name, path):
 
     skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
     time_list = clustering(skeleton_json_file)
-    with open(f'../output/time_results/time_results_{get_video_name()}.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        for i in range(len(time_list)):
-            writer.writerow(["=\"" + time_list[i] + "\""])
+    # 폭력 의심 구간을 영상으로 만듦
+    pathOut = f'../output/final_results/{get_video_name()}.avi'
+    out = cv2.VideoWriter(pathOut, cv2.VideoWriter_fourcc(*'DIVX'), 30, get_frame_size())
+    for lst in time_list:
+        for i in range(lst[0], lst[1] + 1):
+            pathIn = f'../output/video/{get_video_name()}/frames/{i}.png'
+            img = cv2.imread(pathIn)
+            out.write(img)
+    out.release()
 
 
 if __name__ == "__main__":

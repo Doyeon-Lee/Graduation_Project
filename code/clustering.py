@@ -1,3 +1,4 @@
+import json
 import pickle
 import datetime
 import numpy as np
@@ -6,6 +7,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
 from plotting import get_variance
+from global_data import set_frame_num, get_frame_num
 
 
 # x와 y 나누기
@@ -30,7 +32,50 @@ def cluster_xy(label, ids, incli_list, angle_list, len_arm):
     return violence_index, violence_x, violence_y, non_violence_x, non_violence_y
 
 
+def make_pair(start_frame, end_frame):
+    start_video_frame = max(start_frame - 30, 0)
+    end_video_frame = min(get_frame_num(), start_frame + 30 if end_frame == -1 else end_frame + 30)
+    return [start_video_frame, end_video_frame]
+
+
+def make_time_pair(violence_index):
+    # violence_index가 비어있으면 바로 return
+    if len(violence_index) == 0:
+        return []
+
+    # 앞 뒤로 2초내에 벌어진 상황이면 같은 영상으로 편집(30fps라고 가정)
+    one_video_frame = 60
+    time_pairs = []
+
+    start_frame = violence_index[0]
+    end_frame = -1
+
+    for cand_idx in violence_index:
+        if end_frame == -1:
+            end_frame = start_frame
+
+        if end_frame + one_video_frame < cand_idx:
+            time_pair = make_pair(start_frame, end_frame)
+            time_pairs.append(time_pair)
+            start_frame = cand_idx
+            end_frame = -1
+        else:
+            end_frame = cand_idx
+
+    # start만 있고 end는 없을 경우
+    if start_frame != end_frame:
+        time_pair = make_pair(start_frame, end_frame)
+        time_pairs.append(time_pair)
+
+    return time_pairs
+
+
 def clustering(skeleton_json_file):
+    # 영상의 frame 수를 저장
+    with open(skeleton_json_file) as f:
+        json_data = json.load(f)
+    set_frame_num(int(json_data[-1]['frame_id']))
+
     # 관절들의 변화량을 list로 저장
     angle_arm = []
     incli_arm = []
@@ -111,29 +156,6 @@ def clustering(skeleton_json_file):
         plt.show()
 
     # 폭력 의심 시간을 list로 뽑아서 저장
-    # frame을 초로 변환 후 중복 제거
-    violence_index = [i // 25 for i in violence_index]
-    violence_index = list(set(violence_index))
     violence_index.sort()
-    time_list = []
-    recorded_sec = -2
-    i = 0
-    while i < len(violence_index):
-        # 연속적으로 폭력이 의심되면 가장 앞쪽 시간만 기록
-        sec = violence_index[i]
-        if recorded_sec + 1 == sec:
-            recorded_sec = sec
-            i += 1
-            continue
-
-        hour = violence_index[i] // 60 // 60
-        minute = violence_index[i] // 60 % 60
-        second = violence_index[i] % 60
-
-        t = str(datetime.datetime.strptime(f'{hour}:{minute}:{second}', '%H:%M:%S').time())
-        # 같은 의심 시간이 list에 있으면 list에 추가하지 않음
-        if t not in time_list:
-            time_list.append(t)
-            recorded_sec = sec
-        i += 1
+    time_list = make_time_pair(violence_index)
     return time_list

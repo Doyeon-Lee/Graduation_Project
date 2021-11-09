@@ -23,6 +23,8 @@ V_PREPROCESSED_FILEPATH = "../output/json/preprocessed_data/violent/cam2/output"
 FRAME_W = 0
 FRAME_H = 0
 
+FRAME_NUM = 0
+
 # default video name
 VIDEO_NAME = ""
 
@@ -56,6 +58,15 @@ def set_frame_size(w, h):
 
 def get_frame_size():
     return FRAME_W, FRAME_H
+
+
+def set_frame_num(n):
+    global FRAME_NUM
+    FRAME_NUM = n
+
+
+def get_frame_num():
+    return FRAME_NUM
 
 
 def get_video_name():
