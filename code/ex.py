@@ -1,9 +1,9 @@
-violence_index = [1, 2, 6, 30, 100, 120, 200]
+violence_index = [1, 2, 6, 30, 100, 120, 160]
 violence_index.sort()
 
 print(violence_index)
 
-start_frame = -1
+start_frame = violence_index[0]
 end_frame = -1
 tmp = [-1, -1]
 time_pairs = []
@@ -19,22 +19,20 @@ def make_pair(start_frame, end_frame):
 
 
 for cand_idx in violence_index:
-    if start_frame == -1:
-        start_frame = cand_idx
-        continue
+    if end_frame == -1:
+        end_frame = start_frame
 
-    if start_frame + one_video_frame < cand_idx:
+    if end_frame + one_video_frame < cand_idx:
         time_pair = make_pair(start_frame, end_frame)
         time_pairs.append(time_pair)
-        print(time_pair)
         start_frame = cand_idx
         end_frame = -1
     else:
         end_frame = cand_idx
 
-    # start만 있고 end는 없을 경우
-    if start_frame != -1 and end_frame == -1:
-        time_pair = make_pair(start_frame, end_frame)
-        time_pairs.append(time_pair)
+# start만 있고 end는 없을 경우
+if start_frame != end_frame:
+    time_pair = make_pair(start_frame, end_frame)
+    time_pairs.append(time_pair)
 
 print(time_pairs)
