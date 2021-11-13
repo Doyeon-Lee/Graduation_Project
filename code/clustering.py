@@ -153,7 +153,7 @@ def clustering(skeleton_json_file):
         plt.scatter(violence_x, violence_y, label='violence')
         plt.scatter(non_violence_x, non_violence_y, label='non-violence')
         plt.legend()
-        plt.show()
+        # plt.show()
 
     # 폭력 의심 시간을 list로 뽑아서 저장
     violence_index.sort()
