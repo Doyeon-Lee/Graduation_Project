@@ -1,10 +1,8 @@
 import json
 import pickle
-import datetime
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
 
 from plotting import get_variance
 from global_data import set_frame_num, get_frame_num
