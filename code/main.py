@@ -235,6 +235,7 @@ def handle_first_frame_info(BBOX_CSV_PATH):
 
 
 def get_first_adult_id(BBOX_CSV_PATH):
+    saved_adult_id = -2
     adult_id, frame_num = handle_first_frame_info(BBOX_CSV_PATH)
 
     # 어른으로 인식된 객체가 있을 때
@@ -268,11 +269,12 @@ def get_first_adult_id(BBOX_CSV_PATH):
             before_frame_num = frame_num
             adult_id, frame_num, adult_json, skeleton_id = find_adult(BBOX_CSV_PATH, frame_num)
             # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
-            is_frame_passed = before_frame_num != frame_num
+            is_frame_passed = (before_frame_num != frame_num)
 
             # frame_num이 total_frame을 넘었음(영상이 끝남)
             if adult_id == -1:
                 break
+
             # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
             if adult_id == -2:
                 with open(adult_json, 'r') as f:
@@ -285,28 +287,26 @@ def get_first_adult_id(BBOX_CSV_PATH):
             continue
 
         image = cv2.imread(f"../output/video/{get_video_name()}/frames/{frame_num}.png")
-
         not_detected = True
-        for item in tmp_list:
-            if int(item[1]) == saved_adult_id:
-                # 추적 대상 tracking하며 관절 추출
-                extend_skeleton_list(get_skeleton(item[2:6], image, frame_num))
 
+        for item in tmp_list:
+            # 추적 대상 tracking하며 관절 추출
+            if int(item[1]) == saved_adult_id:
+                extend_skeleton_list(get_skeleton(item[2:6], image, frame_num))
                 not_detected = False
+                # break 넣어도 되지 않나?
 
         # 현재 frame_num에서 성인이 발견되지 않았다면 성인 재탐지
         if not_detected:
             before_frame_num = frame_num
-            adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+            adult_id, frame_num, adult_json, skeleton_id = find_adult(BBOX_CSV_PATH, frame_num)
             # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
-            if before_frame_num == frame_num:
-                is_frame_passed = False
-            else:
-                is_frame_passed = True
+            is_frame_passed = (before_frame_num != frame_num)
 
             # frame_num이 total_frame을 넘었음(영상이 끝남)
             if adult_id == -1:
                 break
+
             # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
             if adult_id == -2:
                 with open(adult_json, 'r') as f:
