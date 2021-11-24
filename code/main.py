@@ -22,11 +22,11 @@ def save_cropped_image_bbox(csv_line, image, frame_id):
     y = csv_line[1]
     w = csv_line[2] * 2
     h = csv_line[3]
+
     if x + w > image.shape[1]:
         x1 = image.shape[1]
     else:
         x1 = x + w
-
     if y + h > image.shape[0]:
         y1 = image.shape[0]
     else:
@@ -41,7 +41,7 @@ def save_cropped_image_bbox(csv_line, image, frame_id):
 
 # 전체 프레임에서 bbox만큼 잘라 관절 추출(각도, 기울기는 상대적인 값이기 때문)
 # 팔이 범위를 벗어날 수 있기 때문에 가로 2배
-def get_skeleton(frame_id):
+def get_skeleton_json(frame_id):
     # 잘린 이미지에 대해서 skeleton 뽑아냄
     json_file = detect_skeleton(get_video_name(),
                                 ["--image_path", f"../output/video/{get_video_name()}/cropped_image/{frame_id}.png"],
@@ -51,85 +51,84 @@ def get_skeleton(frame_id):
     return json_data
 
 
-def find_adult(csv_file, frame_num):
-    f = open(csv_file, 'r', encoding='utf-8')
-    rdr = csv.reader(f)
-    rdr = list(rdr)
-
+# frame_num 부터 성인을 찾아 다양한 정보를 리턴
+def find_adult(BBOX_CSV_PATH, frame_num):
+    csv_file = open(BBOX_CSV_PATH, 'r', encoding='utf-8')
+    csv_rdr = csv.reader(csv_file)
+    csv_list = list(csv_rdr)
     skeleton_id = -1
     total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
+
     while skeleton_id == -1:
-        # 프레임 수가 넘어가면 return
+        # 영상이 끝날 때까지 찾지 못했음
         if total_frame <= frame_num:
             return -1, total_frame, None, -1
 
         # 첫 번째 프레임
-        first_frame_image = f'../output/video/{get_video_name()}/frames/{frame_num}.png'
-
+        frame_image = f'../output/video/{get_video_name()}/frames/{frame_num}.png'
         # 관절로 성인을 찾고 머리가 가장 비슷한 bbox 찾기
-        first_frame_json = detect_skeleton(get_video_name(), ["--image_path", first_frame_image], 'photo', frame_num)
-        skeleton_id = child_distinguish(frame_num, first_frame_json)
+        frame_json_path = detect_skeleton(get_video_name(), ["--image_path", frame_image], 'photo', frame_num)
+        skeleton_id = child_distinguish(frame_num, frame_json_path)
 
-        if skeleton_id != -1:
-            break
-
+        # while 문의 조건이 있지만 아래의 frame_num + 1을 방지하기 위해 미리 break 해준다
+        if skeleton_id != -1: break
         frame_num += 1
 
-    with open(first_frame_json, 'r') as f:
+    # frame_json_path 가 정의되지 않는 경우는 위 if문에서 return되기 때문에 상관없다
+    with open(frame_json_path, 'r') as f:
         json_obj = json.load(f)
-    f.close()
-    head = json_obj[0]['person'][skeleton_id]['keypoint']['Head']
-    neck = json_obj[0]['person'][skeleton_id]['keypoint']['Neck']
+        head = json_obj[0]['person'][skeleton_id]['keypoint']['Head']
+        neck = json_obj[0]['person'][skeleton_id]['keypoint']['Neck']
 
-    # 성인의 bbox를 확인할 수 없음
+    # 관절값을 믿을 수 없음
     if head['accuracy'] < 0.7 or neck['accuracy'] < 0.7:
-        return -2, frame_num, first_frame_json, skeleton_id
+        return -2, frame_num, frame_json_path, skeleton_id
 
-    minimum = -1  # 가장 작은 차이값
+    csv_size = len(csv_list)
+    csv_tmp_list = []
+    csv_idx = 0
+    min_sum = -1  # 가장 작은 차이값
     adult_id = -2  # 차이값이 가장 작은 사람의 id
-    idx = 0
-    # frame 찾음
-    while int(rdr[idx][0]) < frame_num + 1:
-        idx += 1
-        # bbox를 찾을 수 없음
-        if idx >= len(rdr):
-            return -2, frame_num, first_frame_json, skeleton_id
-    # frame_id가 동일한 line들을 list로 만듦
-    tmp_list = []
-    rdr_list = rdr[idx:]
-    for line in rdr_list:
-        if int(line[0]) == frame_num + 1:
-            tmp_list.append(line)
-            idx += 1
-        else:  # 다음 프레임으로 넘어가버렸다!
-            break
 
-    for line in tmp_list:
+    # frame 찾음
+    while int(csv_list[csv_idx][0]) < frame_num + 1:
+        csv_idx += 1
+        # bbox를 찾을 수 없음
+        if csv_idx >= len(csv_list):
+            return -2, frame_num, frame_json_path, skeleton_id
+
+        # frame_id가 동일한 line들을 list로 만듦
+        while int(csv_list[csv_idx][0]) == frame_num + 1:
+            if csv_idx >= csv_size: break
+            csv_tmp_list.append(csv_list[csv_idx])
+            csv_idx += 1
+
+    for csv_tmp_line in csv_tmp_list:
         # neck의 좌표가 bbox의 범위 내에 있는지 확인
-        if not (float(line[2]) <= neck['x'] <= float(line[2]) + float(line[4]) and \
-                float(line[3]) <= neck['y'] <= float(line[3]) + float(line[5])):
+        if not (float(csv_tmp_line[2]) <= neck['x'] <= float(csv_tmp_line[2]) + float(csv_tmp_line[4]) and \
+                float(csv_tmp_line[3]) <= neck['y'] <= float(csv_tmp_line[3]) + float(csv_tmp_line[5])):
             continue
 
         # x좌표
-        x = float(line[2]) + float(line[4]) / 2
+        bbox_x = float(csv_tmp_line[2]) + float(csv_tmp_line[4]) / 2
         # y좌표, y좌표가 음수인 경우를 대비해 max 함수 사용
-        y = max(float(line[3]), 0)
+        bbox_y = max(float(csv_tmp_line[3]), 0)
 
         # x좌표와 y좌표의 차이
-        x_diff = abs(head["x"] - x)
-        y_diff = head["y"] + 1 - y  # 1은 bumper
+        x_diff = abs(head["x"] - bbox_x)
+        y_diff = head["y"] + 1 - bbox_y  # 1은 bumper
 
         # 머리가 bbox보다 위에 있으면 continue
         if y_diff < 0:
             continue
 
-        if minimum == -1:
-            minimum = x_diff + y_diff
-            adult_id = int(line[1])
+        if min_sum == -1:
+            min_sum = x_diff + y_diff
+            adult_id = int(csv_tmp_line[1])
         else:
-            if minimum > x_diff + y_diff:
-                minimum = x_diff + y_diff
-                adult_id = int(line[1])
+            if min_sum > x_diff + y_diff:
+                min_sum = x_diff + y_diff
+                adult_id = int(csv_tmp_line[1])
 
     # 찾은 성인이 이전에 skeleton으로 추적하던 성인과 동일한지 확인
     skeleton_list = get_skeleton_list()
@@ -146,7 +145,7 @@ def find_adult(csv_file, frame_num):
     # prev_adult_point가 비어있으므로 current_adult_point로 set해줌
     else:
         set_prev_adult_point(get_current_adult_point())
-    return adult_id, frame_num, first_frame_json, skeleton_id
+    return adult_id, frame_num, frame_json_path, skeleton_id
 
 
 def track_by_skeleton(json_obj, frame_num, skeleton_id):
@@ -298,7 +297,7 @@ def get_first_adult_id(BBOX_CSV_PATH):
             if int(csv_tmp_line[1]) == saved_adult_id:
                 # cropped image 저장하고 skeleton extend하기
                 save_cropped_image_bbox(csv_tmp_line[2:6], image, frame_num)
-                extend_skeleton_list(get_skeleton(frame_num))
+                extend_skeleton_list(get_skeleton_json(frame_num))
                 not_detected = False
                 # break 넣어도 되지 않나?
 
