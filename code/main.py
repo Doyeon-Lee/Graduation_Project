@@ -193,32 +193,35 @@ def crop(skeleton_list):
         i += 1
 
 
-def main(file_name, path):
-
+def exec_MOT(original_video_path):
     # cropped_image 폴더를 만들어둠
-    if not os.path.exists(f"../output/video/{get_video_name()}/cropped_image"):
-        os.makedirs(f"../output/video/{get_video_name()}/cropped_image")
+    CROPPED_IMAGE_PATH = f"../output/video/{get_video_name()}/cropped_image"
+    if not os.path.exists(CROPPED_IMAGE_PATH):
+        os.makedirs(CROPPED_IMAGE_PATH)
+
     # 최종 결과물이 들어갈 폴더를 만들어줌
-    if not os.path.exists(f"../output/final_results"):
-        os.makedirs(f"../output/final_results")
+    FINAL_RESULT_PATH = f"../output/final_results"
+    if not os.path.exists(FINAL_RESULT_PATH):
+        os.makedirs(FINAL_RESULT_PATH)
 
     # MOT 돌리기
-    csv_file = tracking(['mot', '--load_model', '../../FairMOT/models/fairmot_dla34.pth', \
-                         '--input-video', path, '--input-video-name', get_video_name(), \
-                         '--output-root', f'../output/video/{get_video_name()}/final', '--conf_thres', '0.4'])
+    MODEL_PATH = '../../FairMOT/models/fairmot_dla34.pth'
+    OUTPUT_VIDEO_PATH = f'../output/video/{get_video_name()}/final'
+    csv_file = tracking(['mot', '--load_model', MODEL_PATH, '--input-video', original_video_path, \
+                         '--input-video-name', get_video_name(), '--output-root', OUTPUT_VIDEO_PATH, '--conf_thres', '0.4'])
 
     # GPU memory 초기화
     cuda.close()
 
-    # csv_file = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
 
+def find_first_adult_id(BBOX_CSV_PATH):
     adult_id = -2
     frame_num = 0
     while adult_id == -2:
         # 성인의 id와 현재 frame 번호
-        adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+        adult_id, frame_num, adult_json, skeleton_id = find_adult(BBOX_CSV_PATH, frame_num)
 
-        # frame_num이 total_frame을 넘었음(영상이 끝남)
+        # frame_num이 total_frame)을 넘었음(영상이 끝남)
         if adult_id == -1:
             break
         # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
@@ -231,7 +234,7 @@ def main(file_name, path):
     if adult_id >= 0:
         saved_adult_id = adult_id
 
-    f = open(csv_file, 'r', encoding='utf-8')
+    f = open(BBOX_CSV_PATH, 'r', encoding='utf-8')
     rdr = csv.reader(f)
     rdr = list(rdr)
 
@@ -316,14 +319,11 @@ def main(file_name, path):
         frame_num += 1
         is_frame_num_passed = True
 
-    # json파일로 저장
-    skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
-    with open(skeleton_json_file, 'w', encoding="utf-8") as make_file:
-        json.dump(get_skeleton_list(), make_file, ensure_ascii=False, indent="\t")
+    return adult_id
 
-    skeleton_json_file = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
-    time_list = clustering(skeleton_json_file)
-    # 폭력 의심 구간을 영상으로 만듦
+
+def make_violence_video(SKELETON_JSON_PATH):
+    time_list = clustering(SKELETON_JSON_PATH)
     pathOut = f'../output/final_results/{get_video_name()}.avi'
     out = cv2.VideoWriter(pathOut, cv2.VideoWriter_fourcc(*'DIVX'), 30, get_frame_size())
     for lst in time_list:
@@ -352,4 +352,15 @@ if __name__ == "__main__":
     set_frame_size(int(width), int(height))
     cap.release()
 
-    main(original_video_name, original_video_path)
+    exec_MOT(original_video_path)
+
+    BBOX_CSV_PATH = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
+    adult_id = find_first_adult_id(BBOX_CSV_PATH)
+
+    # json파일로 저장
+    SKELETON_JSON_PATH = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
+    with open(SKELETON_JSON_PATH, 'w', encoding="utf-8") as make_file:
+        json.dump(get_skeleton_list(), make_file, ensure_ascii=False, indent="\t")
+
+    # 폭력 의심 구간을 영상으로 만듦
+    make_violence_video(SKELETON_JSON_PATH)
