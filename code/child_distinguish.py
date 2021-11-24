@@ -15,7 +15,7 @@ def get_distance(json_obj, skeleton_id):
     distance = 0
     key_count = 0
     adult_obj = get_prev_adult_point()
-    for key in body_point[:-1]:
+    for key in BODY_POINT[:-1]:
         if json_obj[0]['person'][skeleton_id]['keypoint'][key]['accuracy'] >= 0.7:
             x = json_obj[0]['person'][skeleton_id]['keypoint'][key]['x']
             y = json_obj[0]['person'][skeleton_id]['keypoint'][key]['y']

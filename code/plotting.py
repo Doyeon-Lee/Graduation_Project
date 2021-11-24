@@ -43,7 +43,7 @@ def get_incl_angle(v1, v2):
 def get_point_list(person):
     tmp = []
     for i in range(15):
-        bt = person[body_point[i]]
+        bt = person[BODY_POINT[i]]
         tmp.append((float(bt['x']), float(bt['y']), float(bt['accuracy'])))
     return np.asarray(tmp)
 
@@ -156,7 +156,7 @@ def make_preprocessed_json(json_filename, person_id):
             "angle_variance": angle_list,
             "incl_variance": incl_list
         }
-        point = {specific_joint[point_number]: variance}
+        point = {SPECIFIC_JOINT[point_number]: variance}
         variance_list.append(point) # 4가지 모두 저장
 
     result["variance"] = variance_list
@@ -224,7 +224,7 @@ def get_variance(json_filename, point_number):
                 continue
 
             # 추적하고자 하는 객체의 관절 변화를 계산
-            p1, p2, p3 = specific_point[point_number]
+            p1, p2, p3 = SPECIFIC_POINT[point_number]
 
             # 추적하는 객체의 관절값 가져오기
             p1 = specific[p1]; p2 = specific[p2]; p3 = specific[p3]
@@ -330,7 +330,7 @@ def get_distance(json_obj, skeleton_id):
     distance = 0
     key_count = 0
     adult_obj = get_prev_adult_point()
-    for key in body_point[:-1]:
+    for key in BODY_POINT[:-1]:
         if json_obj[0]['person'][skeleton_id]['keypoint'][key]['accuracy'] >= 0.7:
             x = json_obj[0]['person'][skeleton_id]['keypoint'][key]['x']
             y = json_obj[0]['person'][skeleton_id]['keypoint'][key]['y']

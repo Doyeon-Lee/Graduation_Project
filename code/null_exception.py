@@ -23,7 +23,7 @@ def null_exception(cam_num, file_name):
                     "y": float(0),
                     "accuracy": float(0)
                 }
-                location.update({body_point[keypoint]: body})
+                location.update({BODY_POINT[keypoint]: body})
 
             one_frame_data["person"] = [{
                 "person_id": 0,

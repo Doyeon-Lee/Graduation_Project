@@ -9,7 +9,7 @@ import json
 import numpy as np
 
 # 사용자가 보는 것과 반대 방향(오른쪽 > left)
-body_point = ["Head", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
+BODY_POINT = ["Head", "Neck", "RShoulder", "RElbow", "RWrist", "LShoulder", "LElbow", "LWrist",
               "RHip", "RKnee", "RAnkle", "LHip", "LKnee", "LAnkle", "Chest", "Background"]
 
 
@@ -33,7 +33,7 @@ def make_json(datum, frame_id, img):
                 "y": float(datum.poseKeypoints[person_id][keypoint][1]),
                 "accuracy": float(datum.poseKeypoints[person_id][keypoint][2])
             }
-            location.update({body_point[keypoint]: body})
+            location.update({BODY_POINT[keypoint]: body})
 
         keypoints_tmp.append({
             "person_id": person_id,

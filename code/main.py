@@ -194,16 +194,7 @@ def crop(skeleton_list):
 
 
 def main(file_name, path):
-    set_video_name(file_name)
 
-    init_rate()
-    initPoint()
-    # frame_size 정해줌
-    cap = cv2.VideoCapture(path)
-    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-    set_frame_size(int(width), int(height))
-    cap.release()
     # cropped_image 폴더를 만들어둠
     if not os.path.exists(f"../output/video/{get_video_name()}/cropped_image"):
         os.makedirs(f"../output/video/{get_video_name()}/cropped_image")
@@ -344,8 +335,21 @@ def main(file_name, path):
 
 
 if __name__ == "__main__":
+    original_video_name = sys.argv[1]
     if sys.argv[2] == "n":
-        path = f'../media/non-violence/{sys.argv[1]}.mp4'
+        original_video_path = f'../media/non-violence/{original_video_name}.mp4'
     else:
-        path = f'../media/violence/{sys.argv[1]}.mp4'
-    main(sys.argv[1], path)
+        original_video_path = f'../media/violence/{original_video_name}.mp4'
+
+    set_video_name(original_video_name)
+    init_rate()
+    init_point()
+
+    # frame_size 정해줌
+    cap = cv2.VideoCapture(original_video_path)
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    set_frame_size(int(width), int(height))
+    cap.release()
+
+    main(original_video_name, original_video_path)

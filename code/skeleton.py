@@ -98,7 +98,7 @@ def detect_skeleton(file_name, path='', input_type='video', frame_id=-1, cropped
                     "y": float(0),
                     "accuracy": float(0)
                 }
-                location.update({body_point[keypoint]: body})
+                location.update({BODY_POINT[keypoint]: body})
 
             one_frame_data["person"] = [{
                 "person_id": 0,
@@ -156,7 +156,7 @@ def detect_skeleton(file_name, path='', input_type='video', frame_id=-1, cropped
                         "y": float(0),
                         "accuracy": float(0)
                     }
-                    location.update({body_point[keypoint]: body})
+                    location.update({BODY_POINT[keypoint]: body})
 
                 one_frame_data["person"] = [{
                     "person_id": 0,

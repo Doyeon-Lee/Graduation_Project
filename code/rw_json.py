@@ -15,7 +15,7 @@ def make_skeleton_json(datum, frame_id):
                 "y": float(datum.poseKeypoints[person_id][keypoint][1]),
                 "accuracy": float(datum.poseKeypoints[person_id][keypoint][2])
             }
-            location.update({body_point[keypoint]: body})
+            location.update({BODY_POINT[keypoint]: body})
 
         keypoints_tmp.append({
             "person_id": person_id,
