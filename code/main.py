@@ -214,14 +214,15 @@ def exec_MOT(original_video_path):
     cuda.close()
 
 
-def find_first_adult_id(BBOX_CSV_PATH):
+# 첫번째 프레임의 adult id, frame번호 등을 처리한다
+def handle_first_frame_info(BBOX_CSV_PATH):
     adult_id = -2
     frame_num = 0
     while adult_id == -2:
         # 성인의 id와 현재 frame 번호
         adult_id, frame_num, adult_json, skeleton_id = find_adult(BBOX_CSV_PATH, frame_num)
 
-        # frame_num이 total_frame)을 넘었음(영상이 끝남)
+        # frame_num이 total_frame을 넘었음(영상이 끝남)
         if adult_id == -1:
             break
         # skeleton 추출은 되지만 bbox가 없는 경우 skeleton 자체를 skeleton_list에 append 해줌
@@ -230,43 +231,44 @@ def find_first_adult_id(BBOX_CSV_PATH):
                 json_obj = json.load(f)
             tracking_by_skeleton(json_obj, frame_num, skeleton_id)
             frame_num += 1
-    # 0 또는 양의 정수일 때
+    return adult_id, frame_num
+
+
+def get_first_adult_id(BBOX_CSV_PATH):
+    adult_id, frame_num = handle_first_frame_info(BBOX_CSV_PATH)
+
+    # 어른으로 인식된 객체가 있을 때
     if adult_id >= 0:
         saved_adult_id = adult_id
 
-    f = open(BBOX_CSV_PATH, 'r', encoding='utf-8')
-    rdr = csv.reader(f)
-    rdr = list(rdr)
-
-    idx = 0  # 현재 프레임의 첫번째줄
-    is_frame_num_passed = True  # 프레임이 넘어갔는지 여부
-    rdr_size = len(rdr)
+    csv_file = open(BBOX_CSV_PATH, 'r', encoding='utf-8')
+    csv_rdr = csv.reader(csv_file)
+    csv_list = list(csv_rdr)
+    csv_idx = 0  # 현재 프레임의 첫번째줄
+    is_frame_passed = True  # 프레임이 넘어갔는지 여부
+    csv_size = len(csv_list)
     total_frame = len(os.listdir(f'../output/video/{get_video_name()}/frames'))
+
     while frame_num < total_frame:
         # frame 찾음
-        while idx < rdr_size and int(rdr[idx][0]) < frame_num + 1:
-            idx += 1
+        while csv_idx < csv_size and int(csv_list[csv_idx][0]) < frame_num + 1:
+            csv_idx += 1
 
+        tmp_list = []
         # frame_id가 동일한 line들을 list로 만듦
-        if is_frame_num_passed:
-            tmp_list = []
-            rdr_list = rdr[idx:]
-            for line in rdr_list:
-                if int(line[0]) == frame_num + 1:
-                    tmp_list.append(line)
-                    idx += 1
-                else:  # 다음 프레임으로 넘어가버렸다!
-                    break
+        if is_frame_passed:
+            # 다음 프레임으로 넘어가기 전까지 반복
+            while int(csv_list[csv_idx][0]) == frame_num + 1:
+                if csv_idx >= csv_size: break
+                tmp_list.append(csv_list[csv_idx])
+                csv_idx += 1
 
         # 검출된 bbox가 없는 경우
         if len(tmp_list) == 0:
             before_frame_num = frame_num
-            adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
+            adult_id, frame_num, adult_json, skeleton_id = find_adult(BBOX_CSV_PATH, frame_num)
             # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
-            if before_frame_num == frame_num:
-                is_frame_num_passed = False
-            else:
-                is_frame_num_passed = True
+            is_frame_passed = before_frame_num != frame_num
 
             # frame_num이 total_frame을 넘었음(영상이 끝남)
             if adult_id == -1:
@@ -277,7 +279,7 @@ def find_first_adult_id(BBOX_CSV_PATH):
                     json_obj = json.load(f)
                 tracking_by_skeleton(json_obj, frame_num, skeleton_id)
                 frame_num += 1
-                is_frame_num_passed = True
+                is_frame_passed = True
             elif adult_id >= 0:
                 saved_adult_id = adult_id
             continue
@@ -298,9 +300,9 @@ def find_first_adult_id(BBOX_CSV_PATH):
             adult_id, frame_num, adult_json, skeleton_id = find_adult(csv_file, frame_num)
             # find_adult 함수 내부에서 frame_num이 넘어갔는지 확인
             if before_frame_num == frame_num:
-                is_frame_num_passed = False
+                is_frame_passed = False
             else:
-                is_frame_num_passed = True
+                is_frame_passed = True
 
             # frame_num이 total_frame을 넘었음(영상이 끝남)
             if adult_id == -1:
@@ -311,13 +313,13 @@ def find_first_adult_id(BBOX_CSV_PATH):
                     json_obj = json.load(f)
                 tracking_by_skeleton(json_obj, frame_num, skeleton_id)
                 frame_num += 1
-                is_frame_num_passed = True
+                is_frame_passed = True
             elif adult_id >= 0:
                 saved_adult_id = adult_id
             continue
 
         frame_num += 1
-        is_frame_num_passed = True
+        is_frame_passed = True
 
     return adult_id
 
@@ -355,7 +357,7 @@ if __name__ == "__main__":
     exec_MOT(original_video_path)
 
     BBOX_CSV_PATH = f'../output/video/{get_video_name()}/final/results{get_video_name()}_0.csv'
-    adult_id = find_first_adult_id(BBOX_CSV_PATH)
+    adult_id = get_first_adult_id(BBOX_CSV_PATH)
 
     # json파일로 저장
     SKELETON_JSON_PATH = f'../output/video/{get_video_name()}/results{get_video_name()}.json'
